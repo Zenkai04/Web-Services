@@ -1,0 +1,7 @@
+<!--
+    CONTEXTE TOMCAT - Configuration locale de l'application
+
+    reloadable="true" demande a Tomcat de recharger l'application quand les classes changent.
+    C'est pratique en developpement pour eviter un redeploiement manuel apres compilation.
+-->
+<Context reloadable="true" />
