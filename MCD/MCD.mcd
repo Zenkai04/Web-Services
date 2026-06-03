@@ -1,0 +1,11 @@
+MEMBRE_DE, 0N UTILISATEUR, 1N CANAL: dateAdhesion
+CANAL: idCanal, nom, description, typeCanal, slug, dateCreation
+:
+
+UTILISATEUR: idUtilisateur, pseudo, email, motDePasseHash, dateCreation
+ADMINISTRER, 0N UTILISATEUR, 11 CANAL
+CONTENIR, 11 MESSAGE, 0N CANAL
+
+ECRIRE, 0N UTILISATEUR, 11 MESSAGE
+MESSAGE: idMessage, contenu, dateCreation, dateModification
+:

@@ -1,0 +1,33 @@
+{
+  "width": 380,
+  "height": 390,
+  "cx": [
+    [ "MEMBRE_DE", 67 ],
+    [ "CANAL", 208 ],
+    [ "UTILISATEUR", 67 ],
+    [ "ADMINISTRER", 208 ],
+    [ "CONTENIR", 331 ],
+    [ "ECRIRE", 67 ],
+    [ "MESSAGE", 208 ]
+  ],
+  "cy": [
+    [ "MEMBRE_DE", 77 ],
+    [ "CANAL", 77 ],
+    [ "UTILISATEUR", 195 ],
+    [ "ADMINISTRER", 195 ],
+    [ "CONTENIR", 195 ],
+    [ "ECRIRE", 330 ],
+    [ "MESSAGE", 330 ]
+  ],
+  "shift": [
+    [ "MEMBRE_DE,UTILISATEUR,0", 0 ],
+    [ "MEMBRE_DE,CANAL,0", 0 ],
+    [ "ADMINISTRER,UTILISATEUR,0", 0 ],
+    [ "ADMINISTRER,CANAL,0", 0 ],
+    [ "CONTENIR,MESSAGE,0", 0 ],
+    [ "CONTENIR,CANAL,0", 0 ],
+    [ "ECRIRE,UTILISATEUR,0", 0 ],
+    [ "ECRIRE,MESSAGE,0", 0 ]
+  ],
+  "ratio": []
+}
