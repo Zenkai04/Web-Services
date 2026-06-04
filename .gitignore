@@ -1,2 +1,4 @@
-.env
+*.env
+*.properties
 compile.bat
+*.class

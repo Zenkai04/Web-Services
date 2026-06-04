@@ -8,7 +8,7 @@ CREATE TABLE utilisateur (
     pseudo VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     motDePasseHash VARCHAR(255) NOT NULL,
-    date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    dateCreation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE canal (
@@ -18,7 +18,7 @@ CREATE TABLE canal (
     description VARCHAR(255),
     typeCanal VARCHAR(50) CHECK (typeCanal IN ('public', 'privé')),
     slug VARCHAR(255),
-    date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    dateCreation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE membre_de (
@@ -33,7 +33,7 @@ CREATE TABLE message (
     idUtilisateur INT REFERENCES utilisateur(idUtilisateur),
     idCanal INT REFERENCES canal(idCanal),
     contenu TEXT NOT NULL,
-    date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dateCreation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     dateModification TIMESTAMP
 );
 

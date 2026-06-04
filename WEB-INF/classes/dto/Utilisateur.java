@@ -7,14 +7,14 @@ public class Utilisateur {
     private String pseudo;
     private String email;
     private String motDePasseHash;
-    private Timestamp dateInscription;
+    private Timestamp dateCreation;
 
-    public Utilisateur(int idUtilisateur, String pseudo, String email, String motDePasseHash, Timestamp dateInscription) {
+    public Utilisateur(int idUtilisateur, String pseudo, String email, String motDePasseHash, Timestamp dateCreation) {
         this.idUtilisateur = idUtilisateur;
         this.pseudo = pseudo;
         this.email = email;
         this.motDePasseHash = motDePasseHash;
-        this.dateInscription = dateInscription;
+        this.dateCreation = dateCreation;
     }
 
     public Utilisateur() {
@@ -53,10 +53,18 @@ public class Utilisateur {
     }
 
     public Timestamp getDateInscription() {
-        return dateInscription;
+        return dateCreation;
     }
 
     public void setDateInscription(Timestamp dateInscription) {
-        this.dateInscription = dateInscription;
+        this.dateCreation = dateInscription;
+    }
+
+    public Timestamp getDateCreation() {
+        return dateCreation;
+    }
+
+    public void setDateCreation(Timestamp dateCreation) {
+        this.dateCreation = dateCreation;
     }
 }
