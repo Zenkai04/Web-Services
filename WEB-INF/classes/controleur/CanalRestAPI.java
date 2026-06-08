@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.CanalDAO;
 import dao.DAOFactory;
 import dao.MessageDAO;
-import dto.ApiMessage;
+import dto.APIMessage;
 import dto.Canal;
 import dto.Message;
 import jakarta.servlet.annotation.WebServlet;
@@ -53,7 +53,7 @@ public class CanalRestAPI extends HttpServlet {
         }
 
         writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                new ApiMessage("URI invalide"));
+                new APIMessage("URI invalide"));
     }
 
     @Override
@@ -63,7 +63,7 @@ public class CanalRestAPI extends HttpServlet {
 
         if (!isCollectionPath(pathInfo)) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("URI invalide pour la creation d'un canal"));
+                    new APIMessage("URI invalide pour la creation d'un canal"));
             return;
         }
 
@@ -73,14 +73,14 @@ public class CanalRestAPI extends HttpServlet {
 
             if (!created) {
                 writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                        new ApiMessage("Creation du canal impossible"));
+                        new APIMessage("Creation du canal impossible"));
                 return;
             }
 
             writeJsonResponse(res, HttpServletResponse.SC_CREATED, canal);
         } catch (Exception e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("JSON invalide"));
+                    new APIMessage("JSON invalide"));
         }
     }
 
@@ -91,7 +91,7 @@ public class CanalRestAPI extends HttpServlet {
 
         if (isCollectionPath(pathInfo)) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("URI invalide pour la mise a jour d'un canal"));
+                    new APIMessage("URI invalide pour la mise a jour d'un canal"));
             return;
         }
 
@@ -104,12 +104,12 @@ public class CanalRestAPI extends HttpServlet {
 
         if (parts.length >= 3 && "messages".equals(parts[2])) {
             writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                    new ApiMessage("Mise a jour de messages via cette URI non autorisee"));
+                    new APIMessage("Mise a jour de messages via cette URI non autorisee"));
             return;
         }
 
         writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                new ApiMessage("URI invalide pour la mise a jour d'un canal"));
+                new APIMessage("URI invalide pour la mise a jour d'un canal"));
     }
 
     @Override
@@ -119,7 +119,7 @@ public class CanalRestAPI extends HttpServlet {
 
         if (isCollectionPath(pathInfo)) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("URI invalide pour la suppression d'un canal"));
+                    new APIMessage("URI invalide pour la suppression d'un canal"));
             return;
         }
 
@@ -127,7 +127,7 @@ public class CanalRestAPI extends HttpServlet {
 
         if (parts.length != 2) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("URI invalide pour la suppression d'un canal"));
+                    new APIMessage("URI invalide pour la suppression d'un canal"));
             return;
         }
 
@@ -137,7 +137,7 @@ public class CanalRestAPI extends HttpServlet {
 
             if (existingCanal == null) {
                 writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new ApiMessage("Canal introuvable"));
+                        new APIMessage("Canal introuvable"));
                 return;
             }
 
@@ -145,15 +145,15 @@ public class CanalRestAPI extends HttpServlet {
 
             if (!deleted) {
                 writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                        new ApiMessage("Suppression du canal impossible"));
+                        new APIMessage("Suppression du canal impossible"));
                 return;
             }
 
             writeJsonResponse(res, HttpServletResponse.SC_OK,
-                    new ApiMessage("Canal supprime"));
+                    new APIMessage("Canal supprime"));
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("Identifiant de canal invalide"));
+                    new APIMessage("Identifiant de canal invalide"));
         }
     }
 
@@ -165,14 +165,14 @@ public class CanalRestAPI extends HttpServlet {
 
             if (canal == null) {
                 writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new ApiMessage("Canal introuvable"));
+                        new APIMessage("Canal introuvable"));
                 return;
             }
 
             writeJsonResponse(res, HttpServletResponse.SC_OK, canal);
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("Identifiant de canal invalide"));
+                    new APIMessage("Identifiant de canal invalide"));
         }
     }
 
@@ -184,7 +184,7 @@ public class CanalRestAPI extends HttpServlet {
 
             if (canal == null) {
                 writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new ApiMessage("Canal introuvable"));
+                        new APIMessage("Canal introuvable"));
                 return;
             }
 
@@ -192,7 +192,7 @@ public class CanalRestAPI extends HttpServlet {
             writeJsonResponse(res, HttpServletResponse.SC_OK, messages);
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("Identifiant de canal invalide"));
+                    new APIMessage("Identifiant de canal invalide"));
         }
     }
 
@@ -204,7 +204,7 @@ public class CanalRestAPI extends HttpServlet {
 
             if (existingCanal == null) {
                 writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new ApiMessage("Canal introuvable"));
+                        new APIMessage("Canal introuvable"));
                 return;
             }
 
@@ -215,17 +215,17 @@ public class CanalRestAPI extends HttpServlet {
 
             if (!updated) {
                 writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                        new ApiMessage("Mise a jour du canal impossible"));
+                        new APIMessage("Mise a jour du canal impossible"));
                 return;
             }
 
             writeJsonResponse(res, HttpServletResponse.SC_OK, updatedCanal);
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("Identifiant de canal invalide"));
+                    new APIMessage("Identifiant de canal invalide"));
         } catch (Exception e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("JSON invalide"));
+                    new APIMessage("JSON invalide"));
         }
     }
 

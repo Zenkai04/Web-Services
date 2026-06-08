@@ -1,12 +1,13 @@
 package dto;
 
-public class ApiMessage {
+public class APIMessage {
 
     private String message;
 
-    public ApiMessage() {}
+    public APIMessage() {
+    }
 
-    public ApiMessage(String message) {
+    public APIMessage(String message) {
         this.message = message;
     }
 

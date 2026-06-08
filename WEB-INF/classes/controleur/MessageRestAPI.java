@@ -1,12 +1,10 @@
 package controleur;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dao.CanalDAO;
 import dao.DAOFactory;
 import dao.MessageDAO;
-import dto.Canal;
 import dto.Message;
-import dto.ApiMessage;
+import dto.APIMessage;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
@@ -58,43 +56,115 @@ public class MessageRestAPI extends HttpServlet {
                     writeJsonResponse(res, HttpServletResponse.SC_OK, message);
                 } else {
                     writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                            new ApiMessage("Message introuvable"));
+                            new APIMessage("Message introuvable"));
                 }
             } catch (NumberFormatException e) {
                 writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                        new ApiMessage("ID de message invalide"));
+                        new APIMessage("ID de message invalide"));
             }
         } else {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new ApiMessage("Chemin invalide"));
+                    new APIMessage("Chemin invalide"));
         }
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-        writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                new ApiMessage("Méthode PUT non autorisée sur cette ressource"));
+
+        String pathInfo = req.getPathInfo();
+
+        if (pathInfo == null || pathInfo.equals("/")) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de message manquant"));
+            return;
+        }
+
+        String[] parts = pathInfo.split("/");
+
+        if (parts.length != 2) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("URI invalide pour la mise à jour de message"));
+            return;
+        }
+
+        try {
+            int idMessage = Integer.parseInt(parts[1]);
+
+            Message existingMessage = messageDAO.findById(idMessage);
+
+            if (existingMessage == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Message introuvable"));
+                return;
+            }
+
+            Message updatedMessage = objectMapper.readValue(req.getReader(), Message.class);
+            updatedMessage.setIdMessage(idMessage);
+
+            boolean updated = messageDAO.update(updatedMessage);
+
+            if (!updated) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new APIMessage("Mise à jour du message impossible"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK, updatedMessage);
+
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("ID de message invalide"));
+        } catch (Exception e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Données de message invalides"));
+        }
     }
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-        writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                new ApiMessage("Méthode DELETE non autorisée sur cette ressource"));    
-    }
 
-    @Override
-    protected void doPatch(HttpServletRequest req, HttpServletResponse res)
-            throws IOException {
-        writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                new ApiMessage("Méthode PATCH non autorisée sur cette ressource"));
+        String pathInfo = req.getPathInfo();
+
+        if (pathInfo == null || pathInfo.equals("/")) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de message manquant"));
+            return;
         }
+
+        String[] parts = pathInfo.split("/");
+
+        if (parts.length != 2) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("URI invalide pour la suppression de message"));
+            return;
+        }
+
+        try {
+            int idMessage = Integer.parseInt(parts[1]);
+
+            boolean deleted = messageDAO.delete(idMessage);
+
+            if (!deleted) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Message introuvable"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK,
+                    new APIMessage("Message supprimé avec succès"));
+
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("ID de message invalide"));
+        }
+    }
     
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
         throws IOException {
     writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-            new ApiMessage("Méthode POST non autorisée sur cette ressource"));
+            new APIMessage("Méthode POST non autorisée sur cette ressource"));
     }
 }
