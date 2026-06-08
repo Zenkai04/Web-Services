@@ -23,9 +23,9 @@ public class DbConnectionManager {
             Properties props = loadProperties();
             Class.forName("org.postgresql.Driver");
 
-            this.url = getRequiredProperty(props, "db.url", "DB_URL");
-            this.user = getRequiredProperty(props, "db.user", "DB_USER");
-            this.password = getRequiredProperty(props, "db.password", "DB_PASSWORD");
+            this.url = getRequiredProperty(props, "DB_URL");
+            this.user = getRequiredProperty(props, "DB_USER");
+            this.password = getRequiredProperty(props, "DB_PASSWORD");
         } catch (Exception e) {
             throw new IllegalStateException("Impossible d'initialiser la connexion a la base", e);
         }
@@ -86,15 +86,11 @@ public class DbConnectionManager {
         }
     }
 
-    private String getRequiredProperty(Properties props, String lowerKey, String upperKey) {
-        String value = props.getProperty(lowerKey);
+    private String getRequiredProperty(Properties props, String key) {
+        String value = props.getProperty(key);
 
         if (value == null || value.isBlank()) {
-            value = props.getProperty(upperKey);
-        }
-
-        if (value == null || value.isBlank()) {
-            throw new IllegalStateException("Propriete manquante : " + lowerKey + " ou " + upperKey);
+            throw new IllegalStateException("Propriete manquante : " + key);
         }
 
         return value.trim().replaceAll("^\"|\"$", "");

@@ -6,8 +6,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +35,7 @@ public class CanalDAOJDBC implements CanalDAO {
 
     @Override
     public Canal findById(int idCanal) {
-        String sql = "SELECT * FROM canal WHERE idCanal = ?";
+        String sql = "SELECT * FROM canal WHERE \"idCanal\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idCanal);
@@ -71,15 +69,17 @@ public class CanalDAOJDBC implements CanalDAO {
 
     @Override
     public boolean save(Canal canal) {
-        String sql = "INSERT INTO canal (idAdmin, nom, description, typeCanal, slug, dateCreation) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO canal (\"idCanal\", \"idAdmin\", nom, description, \"typeCanal\", slug, \"dateCreation\") "
+                + "VALUES (?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, canal.getIdAdmin());
-            stmt.setString(2, canal.getNom());
-            stmt.setString(3, canal.getDescription());
-            stmt.setString(4, canal.getTypeCanal());
-            stmt.setString(5, canal.getSlug());
-            stmt.setTimestamp(6, canal.getDateCreation());
+            stmt.setInt(1, canal.getIdCanal());
+            stmt.setInt(2, canal.getIdAdmin());
+            stmt.setString(3, canal.getNom());
+            stmt.setString(4, canal.getDescription());
+            stmt.setString(5, canal.getTypeCanal());
+            stmt.setString(6, canal.getSlug());
+            stmt.setTimestamp(7, canal.getDateCreation());
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
@@ -90,7 +90,8 @@ public class CanalDAOJDBC implements CanalDAO {
 
     @Override
     public boolean update(Canal canal) {
-        String sql = "UPDATE canal SET idAdmin = ?, nom = ?, description = ?, typeCanal = ?, slug = ?, dateCreation = ? WHERE idCanal = ?";
+        String sql = "UPDATE canal SET \"idAdmin\" = ?, nom = ?, description = ?, \"typeCanal\" = ?, slug = ?, "
+                + "\"dateCreation\" = COALESCE(?, \"dateCreation\") WHERE \"idCanal\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, canal.getIdAdmin());
@@ -110,7 +111,7 @@ public class CanalDAOJDBC implements CanalDAO {
 
     @Override
     public boolean delete(int idCanal) {
-        String sql = "DELETE FROM canal WHERE idCanal = ?";
+        String sql = "DELETE FROM canal WHERE \"idCanal\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idCanal);
@@ -130,16 +131,7 @@ public class CanalDAOJDBC implements CanalDAO {
         canal.setDescription(rs.getString("description"));
         canal.setTypeCanal(rs.getString("typeCanal"));
         canal.setSlug(rs.getString("slug"));
-        canal.setDateCreation(getTimestamp(rs, "dateCreation", "date_creation"));
+        canal.setDateCreation(rs.getTimestamp("dateCreation"));
         return canal;
-    }
-
-    private Timestamp getTimestamp(ResultSet rs, String preferredColumn, String fallbackColumn)
-            throws SQLException {
-        try {
-            return rs.getTimestamp(preferredColumn);
-        } catch (SQLException e) {
-            return rs.getTimestamp(fallbackColumn);
-        }
     }
 }

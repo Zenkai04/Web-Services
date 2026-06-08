@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +35,7 @@ public class MessageDAOJDBC implements MessageDAO {
     @Override
     public Message findById(int idMessage) {
         Message message = null;
-        String sql = "SELECT * FROM message WHERE idMessage = ?";
+        String sql = "SELECT * FROM message WHERE \"idMessage\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idMessage);
@@ -54,7 +53,7 @@ public class MessageDAOJDBC implements MessageDAO {
     @Override
     public List<Message> findByCanal(int idCanal) {
         List<Message> messages = new ArrayList<>();
-        String sql = "SELECT * FROM message WHERE idCanal = ?";
+        String sql = "SELECT * FROM message WHERE \"idCanal\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idCanal);
@@ -71,14 +70,16 @@ public class MessageDAOJDBC implements MessageDAO {
 
     @Override
     public boolean save(Message message) {
-        String sql = "INSERT INTO message (idUtilisateur, idCanal, contenu, dateCreation, dateModification) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO message (\"idMessage\", \"idUtilisateur\", \"idCanal\", contenu, \"dateCreation\", \"dateModification\") "
+                + "VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?)";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, message.getIdUtilisateur());
-            stmt.setInt(2, message.getIdCanal());
-            stmt.setString(3, message.getContenu());
-            stmt.setTimestamp(4, message.getDateCreation());
-            stmt.setTimestamp(5, message.getDateModification());
+            stmt.setInt(1, message.getIdMessage());
+            stmt.setInt(2, message.getIdUtilisateur());
+            stmt.setInt(3, message.getIdCanal());
+            stmt.setString(4, message.getContenu());
+            stmt.setTimestamp(5, message.getDateCreation());
+            stmt.setTimestamp(6, message.getDateModification());
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {  
@@ -89,7 +90,7 @@ public class MessageDAOJDBC implements MessageDAO {
 
     @Override
     public boolean update(Message message) {
-        String sql = "UPDATE message SET contenu = ?, dateModification = ? WHERE idMessage = ?";
+        String sql = "UPDATE message SET contenu = ?, \"dateModification\" = ? WHERE \"idMessage\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, message.getContenu());
@@ -105,7 +106,7 @@ public class MessageDAOJDBC implements MessageDAO {
 
     @Override
     public boolean delete(int idMessage) {
-        String sql = "DELETE FROM message WHERE idMessage = ?";
+        String sql = "DELETE FROM message WHERE \"idMessage\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idMessage);
@@ -123,17 +124,8 @@ public class MessageDAOJDBC implements MessageDAO {
         message.setIdUtilisateur(rs.getInt("idUtilisateur"));
         message.setIdCanal(rs.getInt("idCanal"));
         message.setContenu(rs.getString("contenu"));
-        message.setDateCreation(getTimestamp(rs, "dateCreation", "date_creation"));
+        message.setDateCreation(rs.getTimestamp("dateCreation"));
         message.setDateModification(rs.getTimestamp("dateModification"));
         return message;
-    }
-
-    private Timestamp getTimestamp(ResultSet rs, String preferredColumn, String fallbackColumn)
-            throws SQLException {
-        try {
-            return rs.getTimestamp(preferredColumn);
-        } catch (SQLException e) {
-            return rs.getTimestamp(fallbackColumn);
-        }
     }
 }

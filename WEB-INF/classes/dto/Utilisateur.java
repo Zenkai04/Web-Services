@@ -52,14 +52,6 @@ public class Utilisateur {
         this.motDePasseHash = motDePasseHash;
     }
 
-    public Timestamp getDateInscription() {
-        return dateCreation;
-    }
-
-    public void setDateInscription(Timestamp dateInscription) {
-        this.dateCreation = dateInscription;
-    }
-
     public Timestamp getDateCreation() {
         return dateCreation;
     }

@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,18 +25,9 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
         utilisateur.setPseudo(rs.getString("pseudo"));
         utilisateur.setEmail(rs.getString("email"));
         utilisateur.setMotDePasseHash(rs.getString("motDePasseHash"));
-        utilisateur.setDateCreation(getTimestamp(rs, "dateCreation", "date_creation"));
+        utilisateur.setDateCreation(rs.getTimestamp("dateCreation"));
 
         return utilisateur;
-    }
-
-    private Timestamp getTimestamp(ResultSet rs, String preferredColumn, String fallbackColumn)
-            throws SQLException {
-        try {
-            return rs.getTimestamp(preferredColumn);
-        } catch (SQLException e) {
-            return rs.getTimestamp(fallbackColumn);
-        }
     }
 
     @Override
@@ -62,7 +52,7 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
 
     @Override
     public Utilisateur findById(int idUtilisateur) {
-        String sql = "SELECT * FROM utilisateur WHERE idUtilisateur = ?";
+        String sql = "SELECT * FROM utilisateur WHERE \"idUtilisateur\" = ?";
 
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -121,13 +111,15 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
 
     @Override
     public boolean save(Utilisateur utilisateur) {
-        String sql = "INSERT INTO utilisateur (pseudo, email, motDePasseHash, dateCreation) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO utilisateur (\"idUtilisateur\", pseudo, email, \"motDePasseHash\", \"dateCreation\") "
+                + "VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, utilisateur.getPseudo());
-            stmt.setString(2, utilisateur.getEmail());
-            stmt.setString(3, utilisateur.getMotDePasseHash());
-            stmt.setTimestamp(4, utilisateur.getDateCreation());
+            stmt.setInt(1, utilisateur.getIdUtilisateur());
+            stmt.setString(2, utilisateur.getPseudo());
+            stmt.setString(3, utilisateur.getEmail());
+            stmt.setString(4, utilisateur.getMotDePasseHash());
+            stmt.setTimestamp(5, utilisateur.getDateCreation());
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
@@ -138,7 +130,8 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
 
     @Override
     public boolean update(Utilisateur utilisateur) {
-        String sql = "UPDATE utilisateur SET pseudo = ?, email = ?, motDePasseHash = ?, dateCreation = ? WHERE idUtilisateur = ?";
+        String sql = "UPDATE utilisateur SET pseudo = ?, email = ?, \"motDePasseHash\" = ?, "
+                + "\"dateCreation\" = COALESCE(?, \"dateCreation\") WHERE \"idUtilisateur\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, utilisateur.getPseudo());
@@ -156,7 +149,7 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
 
     @Override
     public boolean delete(int idUtilisateur) {
-        String sql = "DELETE FROM utilisateur WHERE idUtilisateur = ?";
+        String sql = "DELETE FROM utilisateur WHERE \"idUtilisateur\" = ?";
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idUtilisateur);

@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +20,9 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
 
     @Override
     public List<Utilisateur> findByCanal(int idCanal) {
-        String sql = "SELECT u.* FROM utilisateur u JOIN membre_de m ON u.idUtilisateur = m.idUtilisateur WHERE m.idCanal = ?";
+        String sql = "SELECT u.* FROM utilisateur u "
+                + "JOIN membre_de m ON u.\"idUtilisateur\" = m.\"idUtilisateur\" "
+                + "WHERE m.\"idCanal\" = ?";
         List<Utilisateur> utilisateurs = new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection();
@@ -42,7 +43,9 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
 
     @Override
     public List<Canal> findByUtilisateur(int idUtilisateur) {
-        String sql = "SELECT c.* FROM canal c JOIN membre_de m ON c.idCanal = m.idCanal WHERE m.idUtilisateur = ?";
+        String sql = "SELECT c.* FROM canal c "
+                + "JOIN membre_de m ON c.\"idCanal\" = m.\"idCanal\" "
+                + "WHERE m.\"idUtilisateur\" = ?";
         List<Canal> canaux = new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection();
@@ -63,7 +66,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
 
     @Override
     public boolean isMembre(int idUtilisateur, int idCanal) {
-        String sql = "SELECT 1 FROM membre_de WHERE idUtilisateur = ? AND idCanal = ?";
+        String sql = "SELECT 1 FROM membre_de WHERE \"idUtilisateur\" = ? AND \"idCanal\" = ?";
 
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -82,7 +85,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
 
     @Override
     public boolean addMembre(int idUtilisateur, int idCanal) {
-        String sql = "INSERT INTO membre_de (idUtilisateur, idCanal) VALUES (?, ?)";
+        String sql = "INSERT INTO membre_de (\"idUtilisateur\", \"idCanal\") VALUES (?, ?)";
 
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -98,7 +101,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
 
     @Override
     public boolean removeMembre(int idUtilisateur, int idCanal) {
-        String sql = "DELETE FROM membre_de WHERE idUtilisateur = ? AND idCanal = ?";
+        String sql = "DELETE FROM membre_de WHERE \"idUtilisateur\" = ? AND \"idCanal\" = ?";
 
         try (Connection conn = dbManager.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -118,7 +121,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         utilisateur.setPseudo(rs.getString("pseudo"));
         utilisateur.setEmail(rs.getString("email"));
         utilisateur.setMotDePasseHash(rs.getString("motDePasseHash"));
-        utilisateur.setDateCreation(getTimestamp(rs, "dateCreation", "date_creation"));
+        utilisateur.setDateCreation(rs.getTimestamp("dateCreation"));
         return utilisateur;
     }
 
@@ -130,16 +133,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         canal.setDescription(rs.getString("description"));
         canal.setTypeCanal(rs.getString("typeCanal"));
         canal.setSlug(rs.getString("slug"));
-        canal.setDateCreation(getTimestamp(rs, "dateCreation", "date_creation"));
+        canal.setDateCreation(rs.getTimestamp("dateCreation"));
         return canal;
-    }
-
-    private Timestamp getTimestamp(ResultSet rs, String preferredColumn, String fallbackColumn)
-            throws SQLException {
-        try {
-            return rs.getTimestamp(preferredColumn);
-        } catch (SQLException e) {
-            return rs.getTimestamp(fallbackColumn);
-        }
     }
 }
