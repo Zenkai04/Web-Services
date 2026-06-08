@@ -110,6 +110,9 @@ public class UtilisateurRestAPI extends HttpServlet {
             }
 
             Utilisateur updatedUtilisateur = objectMapper.readValue(req.getReader(), Utilisateur.class);
+            
+            updatedUtilisateur.setMotDePasseHash(PasswordUtils.hashPassword(updatedUtilisateur.getMotDePasseHash()));
+
             updatedUtilisateur.setIdUtilisateur(idUtilisateur);
 
             boolean updated = utilisateurDAO.update(updatedUtilisateur);
