@@ -4,132 +4,232 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.CanalDAO;
 import dao.DAOFactory;
 import dao.MessageDAO;
+import dto.ApiMessage;
 import dto.Canal;
 import dto.Message;
-import dto.ApiMessage;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.List;
 
 @WebServlet("/canaux/*")
 public class CanalRestAPI extends HttpServlet {
-        
-        private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
-        private final MessageDAO messageDAO = DAOFactory.getInstance().getMessageDAO();
 
-        private final ObjectMapper objectMapper = new ObjectMapper();
+    private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
+    private final MessageDAO messageDAO = DAOFactory.getInstance().getMessageDAO();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-        private void writeJsonResponse(HttpServletResponse res, int status, Object data)
-        throws IOException {
+    private void writeJsonResponse(HttpServletResponse res, int status, Object data)
+            throws IOException {
+        res.setStatus(status);
+        res.setContentType("application/json;charset=UTF-8");
+        res.getWriter().print(objectMapper.writeValueAsString(data));
+    }
 
-                res.setStatus(status);
-                res.setContentType("application/json;charset=UTF-8");
-
-                String json =
-                        objectMapper.writeValueAsString(data);
-
-                res.getWriter().print(json);
-        }
-
-        @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse res)
-                throws IOException {
-
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse res)
+            throws IOException {
         String pathInfo = req.getPathInfo();
 
-        // Cas 1 : GET /canaux
-        if (pathInfo == null || pathInfo.equals("/")) {
-                List<Canal> canaux = canalDAO.findAll();
-                writeJsonResponse(res, HttpServletResponse.SC_OK, canaux);
-                return;
+        if (isCollectionPath(pathInfo)) {
+            List<Canal> canaux = canalDAO.findAll();
+            writeJsonResponse(res, HttpServletResponse.SC_OK, canaux);
+            return;
         }
 
         String[] parts = pathInfo.split("/");
 
-        // Cas 2 : GET /canaux/{id}/messages
-        if (parts.length == 3 && parts[2].equals("messages")) {
-                try {
-                int idCanal = Integer.parseInt(parts[1]);
-
-                Canal canal = canalDAO.findById(idCanal);
-
-                if (canal == null) {
-                        writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                                new ApiMessage("Canal introuvable"));
-                        return;
-                }
-
-                List<Message> messages = messageDAO.findByCanal(idCanal);
-
-                writeJsonResponse(res, HttpServletResponse.SC_OK, messages);
-                return;
-
-                } catch (NumberFormatException e) {
-                writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                        new ApiMessage("Identifiant de canal invalide"));
-                return;
-                }
-        }
-
-        // Cas 3 : GET /canaux/{id}
         if (parts.length == 2) {
-                try {
-                int idCanal = Integer.parseInt(parts[1]);
-
-                Canal canal = canalDAO.findById(idCanal);
-
-                if (canal == null) {
-                        writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                                new ApiMessage("Canal introuvable"));
-                        return;
-                }
-
-                writeJsonResponse(res, HttpServletResponse.SC_OK, canal);
-                return;
-
-                } catch (NumberFormatException e) {
-                writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                        new ApiMessage("Identifiant de canal invalide"));
-                return;
-                }
+            handleGetCanal(parts[1], res);
+            return;
         }
 
-        // Cas final : URI non reconnue
+        if (parts.length == 3 && "messages".equals(parts[2])) {
+            handleGetCanalMessages(parts[1], res);
+            return;
+        }
+
         writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                 new ApiMessage("URI invalide"));
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse res)
+            throws IOException {
+        String pathInfo = req.getPathInfo();
+
+        if (!isCollectionPath(pathInfo)) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("URI invalide pour la creation d'un canal"));
+            return;
         }
 
-        @Override
-        protected void doPost(HttpServletRequest req, HttpServletResponse res)
-                throws IOException {
+        try {
+            Canal canal = objectMapper.readValue(req.getReader(), Canal.class);
+            boolean created = canalDAO.save(canal);
 
-                String pathInfo = req.getPathInfo();
+            if (!created) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new ApiMessage("Creation du canal impossible"));
+                return;
+            }
 
-                // POST doit viser la collection : /canaux
-                if (pathInfo != null && !pathInfo.equals("/")) {
-                        writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                                new ApiMessage("URI invalide pour la création d'un canal"));
-                        return;
-                }
-
-                try {
-                        Canal canal = objectMapper.readValue(req.getReader(), Canal.class);
-
-                        boolean created = canalDAO.save(canal);
-
-                        if (!created) {
-                        writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                                new ApiMessage("Création du canal impossible"));
-                        return;
-                        }
-
-                        writeJsonResponse(res, HttpServletResponse.SC_CREATED, canal);
-
-                } catch (Exception e) {
-                        writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                                new ApiMessage("JSON invalide"));
-                }
+            writeJsonResponse(res, HttpServletResponse.SC_CREATED, canal);
+        } catch (Exception e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("JSON invalide"));
         }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse res)
+            throws IOException {
+        String pathInfo = req.getPathInfo();
+
+        if (isCollectionPath(pathInfo)) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("URI invalide pour la mise a jour d'un canal"));
+            return;
+        }
+
+        String[] parts = pathInfo.split("/");
+
+        if (parts.length == 2) {
+            handleUpdateCanal(parts[1], req, res);
+            return;
+        }
+
+        if (parts.length >= 3 && "messages".equals(parts[2])) {
+            writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    new ApiMessage("Mise a jour de messages via cette URI non autorisee"));
+            return;
+        }
+
+        writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                new ApiMessage("URI invalide pour la mise a jour d'un canal"));
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse res)
+            throws IOException {
+        String pathInfo = req.getPathInfo();
+
+        if (isCollectionPath(pathInfo)) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("URI invalide pour la suppression d'un canal"));
+            return;
+        }
+
+        String[] parts = pathInfo.split("/");
+
+        if (parts.length != 2) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("URI invalide pour la suppression d'un canal"));
+            return;
+        }
+
+        try {
+            int idCanal = Integer.parseInt(parts[1]);
+            Canal existingCanal = canalDAO.findById(idCanal);
+
+            if (existingCanal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new ApiMessage("Canal introuvable"));
+                return;
+            }
+
+            boolean deleted = canalDAO.delete(idCanal);
+
+            if (!deleted) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new ApiMessage("Suppression du canal impossible"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK,
+                    new ApiMessage("Canal supprime"));
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("Identifiant de canal invalide"));
+        }
+    }
+
+    private void handleGetCanal(String idCanalPart, HttpServletResponse res)
+            throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new ApiMessage("Canal introuvable"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK, canal);
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("Identifiant de canal invalide"));
+        }
+    }
+
+    private void handleGetCanalMessages(String idCanalPart, HttpServletResponse res)
+            throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new ApiMessage("Canal introuvable"));
+                return;
+            }
+
+            List<Message> messages = messageDAO.findByCanal(idCanal);
+            writeJsonResponse(res, HttpServletResponse.SC_OK, messages);
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("Identifiant de canal invalide"));
+        }
+    }
+
+    private void handleUpdateCanal(String idCanalPart, HttpServletRequest req,
+            HttpServletResponse res) throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+            Canal existingCanal = canalDAO.findById(idCanal);
+
+            if (existingCanal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new ApiMessage("Canal introuvable"));
+                return;
+            }
+
+            Canal updatedCanal = objectMapper.readValue(req.getReader(), Canal.class);
+            updatedCanal.setIdCanal(idCanal);
+
+            boolean updated = canalDAO.update(updatedCanal);
+
+            if (!updated) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new ApiMessage("Mise a jour du canal impossible"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK, updatedCanal);
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("Identifiant de canal invalide"));
+        } catch (Exception e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new ApiMessage("JSON invalide"));
+        }
+    }
+
+    private boolean isCollectionPath(String pathInfo) {
+        return pathInfo == null || "/".equals(pathInfo);
+    }
 }

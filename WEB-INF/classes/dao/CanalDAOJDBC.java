@@ -23,7 +23,7 @@ public class CanalDAOJDBC implements CanalDAO {
         String sql = "SELECT * FROM canal";
         List<Canal> canals = new ArrayList<>();
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
+            PreparedStatement stmt = conn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 canals.add(mapResultSetToCanal(rs));
@@ -38,7 +38,7 @@ public class CanalDAOJDBC implements CanalDAO {
     public Canal findById(int idCanal) {
         String sql = "SELECT * FROM canal WHERE idCanal = ?";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idCanal);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -55,7 +55,7 @@ public class CanalDAOJDBC implements CanalDAO {
     public Canal findBySlug(String slug) {
         String sql = "SELECT * FROM canal WHERE slug = ?";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, slug);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -72,7 +72,7 @@ public class CanalDAOJDBC implements CanalDAO {
     public boolean save(Canal canal) {
         String sql = "INSERT INTO canal (idAdmin, nom, description, typeCanal, slug, dateCreation) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, canal.getIdAdmin());
             stmt.setString(2, canal.getNom());
             stmt.setString(3, canal.getDescription());
@@ -91,7 +91,7 @@ public class CanalDAOJDBC implements CanalDAO {
     public boolean update(Canal canal) {
         String sql = "UPDATE canal SET idAdmin = ?, nom = ?, description = ?, typeCanal = ?, slug = ?, dateCreation = ? WHERE idCanal = ?";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, canal.getIdAdmin());
             stmt.setString(2, canal.getNom());
             stmt.setString(3, canal.getDescription());
@@ -111,7 +111,7 @@ public class CanalDAOJDBC implements CanalDAO {
     public boolean delete(int idCanal) {
         String sql = "DELETE FROM canal WHERE idCanal = ?";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idCanal);
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;

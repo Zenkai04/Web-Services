@@ -24,7 +24,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         List<Utilisateur> utilisateurs = new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idCanal);
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -45,7 +45,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         List<Canal> canaux = new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idUtilisateur);
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -65,7 +65,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         String sql = "SELECT 1 FROM membre_de WHERE idUtilisateur = ? AND idCanal = ?";
 
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idUtilisateur);
             stmt.setInt(2, idCanal);
 
@@ -84,7 +84,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         String sql = "INSERT INTO membre_de (idUtilisateur, idCanal) VALUES (?, ?)";
 
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idUtilisateur);
             stmt.setInt(2, idCanal);
             return stmt.executeUpdate() > 0;
@@ -100,7 +100,7 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         String sql = "DELETE FROM membre_de WHERE idUtilisateur = ? AND idCanal = ?";
 
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idUtilisateur);
             stmt.setInt(2, idCanal);
             return stmt.executeUpdate() > 0;
