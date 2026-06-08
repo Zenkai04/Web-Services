@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.CanalDAO;
 import dao.DAOFactory;
 import dao.MessageDAO;
+import dao.MembreCanalDAO;
 import dto.APIMessage;
 import dto.Canal;
 import dto.Message;
+import dto.Utilisateur;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +22,7 @@ public class CanalRestAPI extends HttpServlet {
 
     private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
     private final MessageDAO messageDAO = DAOFactory.getInstance().getMessageDAO();
+    private final MembreCanalDAO membreCanalDAO = DAOFactory.getInstance().getMembreCanalDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
@@ -52,6 +55,11 @@ public class CanalRestAPI extends HttpServlet {
             return;
         }
 
+        if (parts.length == 3 && "membres".equals(parts[2])) {
+            handleGetCanalMembres(parts[1], res);
+            return;
+        }
+
         writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                 new APIMessage("URI invalide"));
     }
@@ -59,14 +67,24 @@ public class CanalRestAPI extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+
         String pathInfo = req.getPathInfo();
 
+        // Cas 1 : POST /canaux/{id}/messages
         if (!isCollectionPath(pathInfo)) {
+            String[] parts = pathInfo.split("/");
+
+            if (parts.length == 3 && "messages".equals(parts[2])) {
+                handleCreateMessageInCanal(parts[1], req, res);
+                return;
+            }
+
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide pour la creation d'un canal"));
+                    new APIMessage("URI invalide pour la creation"));
             return;
         }
 
+        // Cas 2 : POST /canaux
         try {
             Canal canal = objectMapper.readValue(req.getReader(), Canal.class);
             boolean created = canalDAO.save(canal);
@@ -78,6 +96,7 @@ public class CanalRestAPI extends HttpServlet {
             }
 
             writeJsonResponse(res, HttpServletResponse.SC_CREATED, canal);
+
         } catch (Exception e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                     new APIMessage("JSON invalide"));
@@ -176,6 +195,43 @@ public class CanalRestAPI extends HttpServlet {
         }
     }
 
+    private void handleCreateMessageInCanal(String idCanalPart,
+                                        HttpServletRequest req,
+                                        HttpServletResponse res)
+        throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            Message message = objectMapper.readValue(req.getReader(), Message.class);
+            message.setIdCanal(idCanal);
+
+            boolean created = messageDAO.save(message);
+
+            if (!created) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new APIMessage("Creation du message impossible"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_CREATED, message);
+
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de canal invalide"));
+        } catch (Exception e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("JSON invalide"));
+        }
+    }
+
     private void handleGetCanalMessages(String idCanalPart, HttpServletResponse res)
             throws IOException {
         try {
@@ -190,6 +246,29 @@ public class CanalRestAPI extends HttpServlet {
 
             List<Message> messages = messageDAO.findByCanal(idCanal);
             writeJsonResponse(res, HttpServletResponse.SC_OK, messages);
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de canal invalide"));
+        }
+    }
+
+    private void handleGetCanalMembres(String idCanalPart, HttpServletResponse res)
+        throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            List<Utilisateur> membres = membreCanalDAO.findByCanal(idCanal);
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK, membres);
+
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                     new APIMessage("Identifiant de canal invalide"));
