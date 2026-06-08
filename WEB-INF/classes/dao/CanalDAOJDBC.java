@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,18 +70,26 @@ public class CanalDAOJDBC implements CanalDAO {
 
     @Override
     public boolean save(Canal canal) {
-        String sql = "INSERT INTO canal (\"idCanal\", \"idAdmin\", nom, description, \"typeCanal\", slug, \"dateCreation\") "
-                + "VALUES (?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))";
+        String sql = "INSERT INTO canal (\"idAdmin\", nom, description, \"typeCanal\", slug, \"dateCreation\") "
+                + "VALUES (?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))";
         try (Connection conn = dbManager.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, canal.getIdCanal());
-            stmt.setInt(2, canal.getIdAdmin());
-            stmt.setString(3, canal.getNom());
-            stmt.setString(4, canal.getDescription());
-            stmt.setString(5, canal.getTypeCanal());
-            stmt.setString(6, canal.getSlug());
-            stmt.setTimestamp(7, canal.getDateCreation());
+            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setInt(1, canal.getIdAdmin());
+            stmt.setString(2, canal.getNom());
+            stmt.setString(3, canal.getDescription());
+            stmt.setString(4, canal.getTypeCanal());
+            stmt.setString(5, canal.getSlug());
+            stmt.setTimestamp(6, canal.getDateCreation());
             int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                try (ResultSet keys = stmt.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        canal.setIdCanal(keys.getInt(1));
+                    }
+                }
+            }
+
             return rowsAffected > 0;
         } catch (SQLException e) {
             e.printStackTrace();

@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,17 +71,25 @@ public class MessageDAOJDBC implements MessageDAO {
 
     @Override
     public boolean save(Message message) {
-        String sql = "INSERT INTO message (\"idMessage\", \"idUtilisateur\", \"idCanal\", contenu, \"dateCreation\", \"dateModification\") "
-                + "VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?)";
+        String sql = "INSERT INTO message (\"idUtilisateur\", \"idCanal\", contenu, \"dateCreation\", \"dateModification\") "
+                + "VALUES (?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?)";
         try (Connection conn = dbManager.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, message.getIdMessage());
-            stmt.setInt(2, message.getIdUtilisateur());
-            stmt.setInt(3, message.getIdCanal());
-            stmt.setString(4, message.getContenu());
-            stmt.setTimestamp(5, message.getDateCreation());
-            stmt.setTimestamp(6, message.getDateModification());
+            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setInt(1, message.getIdUtilisateur());
+            stmt.setInt(2, message.getIdCanal());
+            stmt.setString(3, message.getContenu());
+            stmt.setTimestamp(4, message.getDateCreation());
+            stmt.setTimestamp(5, message.getDateModification());
             int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                try (ResultSet keys = stmt.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        message.setIdMessage(keys.getInt(1));
+                    }
+                }
+            }
+
             return rowsAffected > 0;
         } catch (SQLException e) {  
             e.printStackTrace();

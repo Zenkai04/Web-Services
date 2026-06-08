@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,16 +112,24 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
 
     @Override
     public boolean save(Utilisateur utilisateur) {
-        String sql = "INSERT INTO utilisateur (\"idUtilisateur\", pseudo, email, \"motDePasseHash\", \"dateCreation\") "
-                + "VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))";
+        String sql = "INSERT INTO utilisateur (pseudo, email, \"motDePasseHash\", \"dateCreation\") "
+                + "VALUES (?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))";
         try (Connection conn = dbManager.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, utilisateur.getIdUtilisateur());
-            stmt.setString(2, utilisateur.getPseudo());
-            stmt.setString(3, utilisateur.getEmail());
-            stmt.setString(4, utilisateur.getMotDePasseHash());
-            stmt.setTimestamp(5, utilisateur.getDateCreation());
+            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, utilisateur.getPseudo());
+            stmt.setString(2, utilisateur.getEmail());
+            stmt.setString(3, utilisateur.getMotDePasseHash());
+            stmt.setTimestamp(4, utilisateur.getDateCreation());
             int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                try (ResultSet keys = stmt.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        utilisateur.setIdUtilisateur(keys.getInt(1));
+                    }
+                }
+            }
+
             return rowsAffected > 0;
         } catch (SQLException e) {
             e.printStackTrace();
