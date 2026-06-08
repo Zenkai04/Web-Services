@@ -168,6 +168,5 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
             e.printStackTrace();
         }
         return false;
-    }
-    
+    }    
 }
