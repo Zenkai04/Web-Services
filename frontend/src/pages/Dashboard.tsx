@@ -1,16 +1,15 @@
 // src/pages/Dashboard.tsx
 import { useState, useEffect } from 'react';
 import ListeCanaux from '../components/ListeCanaux';
-import { fetchCanauxAPI, type Canal } from '../services/canalService';
+import { fetchCanauxAPI, creerCanalAPI, type Canal } from '../services/canalService';
 import {
     fetchMessagesByCanalAPI,
     envoyerMessageAPI,
     modifierMessageAPI,
     supprimerMessageAPI,
-    MOCK_PSEUDOS,
     type Message
 } from '../services/messageService';
-import type { Utilisateur } from '../services/authService';
+import { fetchUtilisateursAPI, type Utilisateur } from '../services/authService';
 
 interface DashboardProps {
     user: Utilisateur;
@@ -23,23 +22,44 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [nouveauContenu, setNouveauContenu] = useState('');
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [nomNouveauCanal, setNomNouveauCanal] = useState('');
+    const [descNouveauCanal, setDescNouveauCanal] = useState('');
+    const [typeNouveauCanal, setTypeNouveauCanal] = useState('public');
+
     const [loadingCanaux, setLoadingCanaux] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [erreur, setErreur] = useState<string | null>(null);
 
+    const [pseudos, setPseudos] = useState<{ [key: number]: string }>({});
+
     // Chargement initial des canaux
     useEffect(() => {
-        const chargerCanaux = async () => {
+        const chargerDonneesInitiales = async () => {
             try {
-                const data = await fetchCanauxAPI();
-                setCanaux(data);
+                // On lance le chargement des canaux et des utilisateurs en parallèle
+                const [dataCanaux, dataUtilisateurs] = await Promise.all([
+                    fetchCanauxAPI(),
+                    fetchUtilisateursAPI()
+                ]);
+
+                setCanaux(dataCanaux);
+
+                // On transforme le tableau d'utilisateurs en dictionnaire { id: pseudo }
+                const dictionnairePseudos: { [key: number]: string } = {};
+                dataUtilisateurs.forEach(u => {
+                    dictionnairePseudos[u.idUtilisateur] = u.pseudo;
+                });
+                setPseudos(dictionnairePseudos);
+
             } catch (err: any) {
                 setErreur(err.message);
             } finally {
                 setLoadingCanaux(false);
             }
         };
-        chargerCanaux();
+
+        chargerDonneesInitiales();
     }, []);
 
     // Chargement automatique des messages quand le canal change
@@ -104,6 +124,24 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         }
     };
 
+    const handleCreateCanal = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (nomNouveauCanal === '' || descNouveauCanal === '') return;
+
+        try {
+            const canalCree = await creerCanalAPI(nomNouveauCanal, descNouveauCanal, typeNouveauCanal, user.idUtilisateur);
+            setCanaux((prev) => [...prev, canalCree]);
+            setIsModalOpen(false);
+            setNomNouveauCanal('');
+            setDescNouveauCanal('');
+            setTypeNouveauCanal('public');
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+
+
     return (
         <div className="dashboard-layout">
             {/* Barre latérale */}
@@ -124,11 +162,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         onSelectCanal={(canal) => setSelectedCanal(canal)}
                     />
                 )}
+
+                <button type="button" onClick={() => setIsModalOpen(true)}>
+                    Ajouter un canal
+                </button>
             </aside>
 
             {/* Zone principale de discussion */}
             <main className="main-content">
-                {selectedCanal ? (
+            {selectedCanal ? (
                     <div className="chat-container">
                         <div className="chat-header">
                             <h2>{selectedCanal.nom}</h2>
@@ -150,7 +192,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                         <div key={msg.idMessage} className="message-item">
                                             <div>
                                                 <span className="message-author">
-                                                    {MOCK_PSEUDOS[msg.idUtilisateur] || 'Inconnu'} :
+                                                    {pseudos[msg.idUtilisateur] || 'Inconnu'} :
                                                 </span>
                                                 <span className="message-text">{msg.contenu}</span>
                                             </div>
@@ -201,6 +243,32 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     </div>
                 )}
             </main>
+
+            {isModalOpen && (
+                <div>
+                    Création d'un nouveau canal
+                    <form onSubmit={handleCreateCanal} className="message-form">
+                        <input
+                            type="text"
+                            placeholder={`Nom du nouveau canal`}
+                            value={nomNouveauCanal}
+                            onChange={(e) => setNomNouveauCanal(e.target.value)}
+                        />
+                        <input
+                            type="text"
+                            placeholder={`Description du nouveau canal`}
+                            value={descNouveauCanal}
+                            onChange={(e) => setDescNouveauCanal(e.target.value)}
+                        />
+                        <select value={typeNouveauCanal} onChange={(e) => setTypeNouveauCanal(e.target.value)}>
+                            <option value="public">Public</option>
+                            <option value="privé">Privé</option>
+                        </select>
+                        <button type={"submit"}>Valider</button>
+                    </form>
+                    <button type={"button"} onClick={() => setIsModalOpen(false)}>Fermer</button>
+                </div>
+            )}
         </div>
     );
 }

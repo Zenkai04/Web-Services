@@ -14,6 +14,21 @@ const MOCK_USERS: Utilisateur[] = [
     { idUtilisateur: 3, pseudo: 'charlie', email: 'charlie@email.com', motDePasseHash: 'charlie123', dateInscription: '2026-06-04T10:10:00' }
 ];
 
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+/**
+ * API - Récupère tous les utilisateurs pour associer les IDs aux pseudos
+ */
+export async function fetchUtilisateursAPI(): Promise<Utilisateur[]> {
+    const response = await fetch(`${BASE_URL}/utilisateurs`);
+
+    if (!response.ok) {
+        throw new Error("Impossible de charger la liste des utilisateurs");
+    }
+
+    return await response.json();
+}
+
 export async function loginAPI(pseudo: string, motDePasse: string): Promise<Utilisateur> {
     // -------------------------------------------------------------------------
     // EN ATTENDANT LE BACKEND : On simule la réponse HTTP du serveur Jakarta
