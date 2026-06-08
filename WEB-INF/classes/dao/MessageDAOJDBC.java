@@ -21,8 +21,8 @@ public class MessageDAOJDBC implements MessageDAO {
         List<Message> messages = new ArrayList<>();
         String sql = "SELECT * FROM message";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 messages.add(mapResultSetToMessage(rs));
             }
@@ -37,7 +37,7 @@ public class MessageDAOJDBC implements MessageDAO {
         Message message = null;
         String sql = "SELECT * FROM message WHERE idMessage = ?";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idMessage);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -55,7 +55,7 @@ public class MessageDAOJDBC implements MessageDAO {
         List<Message> messages = new ArrayList<>();
         String sql = "SELECT * FROM message WHERE idCanal = ?";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idCanal);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -72,7 +72,7 @@ public class MessageDAOJDBC implements MessageDAO {
     public boolean save(Message message) {
         String sql = "INSERT INTO message (idUtilisateur, idCanal, contenu, dateCreation, dateModification) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, message.getIdUtilisateur());
             stmt.setInt(2, message.getIdCanal());
             stmt.setString(3, message.getContenu());
@@ -90,7 +90,7 @@ public class MessageDAOJDBC implements MessageDAO {
     public boolean update(Message message) {
         String sql = "UPDATE message SET contenu = ?, dateModification = ? WHERE idMessage = ?";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, message.getContenu());
             stmt.setTimestamp(2, message.getDateModification());
             stmt.setInt(3, message.getIdMessage());
@@ -106,7 +106,7 @@ public class MessageDAOJDBC implements MessageDAO {
     public boolean delete(int idMessage) {
         String sql = "DELETE FROM message WHERE idMessage = ?";
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idMessage);
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
