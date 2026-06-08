@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +26,18 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
         utilisateur.setPseudo(rs.getString("pseudo"));
         utilisateur.setEmail(rs.getString("email"));
         utilisateur.setMotDePasseHash(rs.getString("motDePasseHash"));
-        utilisateur.setDateCreation(rs.getTimestamp("dateCreation"));
+        utilisateur.setDateCreation(getTimestamp(rs, "dateCreation", "date_creation"));
 
         return utilisateur;
+    }
+
+    private Timestamp getTimestamp(ResultSet rs, String preferredColumn, String fallbackColumn)
+            throws SQLException {
+        try {
+            return rs.getTimestamp(preferredColumn);
+        } catch (SQLException e) {
+            return rs.getTimestamp(fallbackColumn);
+        }
     }
 
     @Override

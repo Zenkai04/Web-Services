@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -122,8 +123,17 @@ public class MessageDAOJDBC implements MessageDAO {
         message.setIdUtilisateur(rs.getInt("idUtilisateur"));
         message.setIdCanal(rs.getInt("idCanal"));
         message.setContenu(rs.getString("contenu"));
-        message.setDateCreation(rs.getTimestamp("dateCreation"));
+        message.setDateCreation(getTimestamp(rs, "dateCreation", "date_creation"));
         message.setDateModification(rs.getTimestamp("dateModification"));
         return message;
+    }
+
+    private Timestamp getTimestamp(ResultSet rs, String preferredColumn, String fallbackColumn)
+            throws SQLException {
+        try {
+            return rs.getTimestamp(preferredColumn);
+        } catch (SQLException e) {
+            return rs.getTimestamp(fallbackColumn);
+        }
     }
 }
