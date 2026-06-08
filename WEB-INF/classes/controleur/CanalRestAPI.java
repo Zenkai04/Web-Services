@@ -79,6 +79,11 @@ public class CanalRestAPI extends HttpServlet {
                 return;
             }
 
+            if (parts.length == 3 && "membres".equals(parts[2])) {
+                handleAddMembreToCanal(parts[1], req, res);
+                return;
+            }
+
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                     new APIMessage("URI invalide pour la creation"));
             return;
@@ -272,6 +277,44 @@ public class CanalRestAPI extends HttpServlet {
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                     new APIMessage("Identifiant de canal invalide"));
+        }
+    }
+
+    private void handleAddMembreToCanal(String idCanalPart,
+                                    HttpServletRequest req,
+                                    HttpServletResponse res)
+        throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            Utilisateur utilisateur = objectMapper.readValue(req.getReader(), Utilisateur.class);
+            int idUtilisateur = utilisateur.getIdUtilisateur();
+
+            boolean added = membreCanalDAO.addMembre(idUtilisateur, idCanal);
+
+            if (!added) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new APIMessage("Ajout du membre impossible"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_CREATED,
+                    new APIMessage("Membre ajoute au canal"));
+
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de canal invalide"));
+        } catch (Exception e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("JSON invalide"));
         }
     }
 

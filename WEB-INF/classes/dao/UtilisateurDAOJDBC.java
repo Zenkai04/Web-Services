@@ -154,19 +154,5 @@ public class UtilisateurDAOJDBC implements UtilisateurDAO {
             e.printStackTrace();
         }
         return false;
-    }
-
-    @Override
-    public boolean delete(int idUtilisateur) {
-        String sql = "DELETE FROM utilisateur WHERE \"idUtilisateur\" = ?";
-        try (Connection conn = dbManager.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, idUtilisateur);
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }    
+    } 
 }

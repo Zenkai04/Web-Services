@@ -16,6 +16,4 @@ public interface UtilisateurDAO {
     boolean save(Utilisateur utilisateur);
 
     boolean update(Utilisateur utilisateur);
-
-    boolean delete(int idUtilisateur);
 }

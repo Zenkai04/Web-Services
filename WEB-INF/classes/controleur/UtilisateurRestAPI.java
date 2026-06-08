@@ -133,42 +133,6 @@ public class UtilisateurRestAPI extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse res)
-            throws IOException {
-        String pathInfo = req.getPathInfo();
-
-        if (pathInfo == null || pathInfo.equals("/")) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Identifiant d'utilisateur manquant"));
-            return;
-        }
-
-        String[] parts = pathInfo.split("/");
-
-        if (parts.length != 2) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide pour la suppression d'utilisateur"));
-            return;
-        }
-        try {
-            int idUtilisateur = Integer.parseInt(parts[1]);
-
-            boolean deleted = utilisateurDAO.delete(idUtilisateur);
-
-            if (deleted) {
-                writeJsonResponse(res, HttpServletResponse.SC_NO_CONTENT, null);
-            } else {
-                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new APIMessage("Utilisateur introuvable"));
-            }
-
-        } catch (NumberFormatException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Identifiant d'utilisateur invalide"));
-        }
-    }
-
     private void handleGetUtilisateur(String idStr, HttpServletResponse res)
             throws IOException {
         try {
