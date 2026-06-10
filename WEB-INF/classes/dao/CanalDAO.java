@@ -15,6 +15,4 @@ public interface CanalDAO {
     boolean save(Canal canal);
 
     boolean update(Canal canal);
-
-    boolean delete(int idCanal);
 }

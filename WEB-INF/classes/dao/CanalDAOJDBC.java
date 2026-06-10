@@ -118,48 +118,6 @@ public class CanalDAOJDBC implements CanalDAO {
         }
     }
 
-    @Override
-    public boolean delete(int idCanal) {
-        String sqlMessages = "DELETE FROM message WHERE \"idCanal\" = ?";
-        String sqlMembres = "DELETE FROM membre_de WHERE \"idCanal\" = ?";
-        String sqlCanal = "DELETE FROM canal WHERE \"idCanal\" = ?";
-
-        try (Connection conn = dbManager.getConnection()) {
-            conn.setAutoCommit(false);
-
-            try (PreparedStatement stmtMessages = conn.prepareStatement(sqlMessages);
-                PreparedStatement stmtMembres = conn.prepareStatement(sqlMembres);
-                PreparedStatement stmtCanal = conn.prepareStatement(sqlCanal)) {
-
-                stmtMessages.setInt(1, idCanal);
-                stmtMessages.executeUpdate();
-
-                stmtMembres.setInt(1, idCanal);
-                stmtMembres.executeUpdate();
-
-                stmtCanal.setInt(1, idCanal);
-                int rowsAffected = stmtCanal.executeUpdate();
-
-                if (rowsAffected > 0) {
-                    conn.commit();
-                    return true;
-                } else {
-                    conn.rollback();
-                    return false;
-                }
-
-            } catch (SQLException e) {
-                conn.rollback();
-                e.printStackTrace();
-                return false;
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     private Canal mapResultSetToCanal(ResultSet rs) throws SQLException {
         Canal canal = new Canal();
         canal.setIdCanal(rs.getInt("idCanal"));
