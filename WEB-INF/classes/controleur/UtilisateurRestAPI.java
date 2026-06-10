@@ -3,9 +3,11 @@ package controleur;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.DAOFactory;
 import dao.UtilisateurDAO;
+import dao.CanalDAO;
 import dto.APIMessage;
 import dto.Utilisateur;
 import dto.UtilisateurPublic;
+import dto.Canal;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 public class UtilisateurRestAPI extends HttpServlet {
 
     private final UtilisateurDAO utilisateurDAO = DAOFactory.getInstance().getUtilisateurDAO();
+    private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
@@ -43,6 +46,11 @@ public class UtilisateurRestAPI extends HttpServlet {
 
         if (parts.length == 2) {
             handleGetUtilisateur(parts[1], res);
+            return;
+        }
+
+        if (parts.length == 3 && "canaux".equals(parts[2])) {
+            handleGetCanalByUtilisateur(parts[1], res);
             return;
         }
 
@@ -171,6 +179,26 @@ public class UtilisateurRestAPI extends HttpServlet {
         } catch (Exception e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                     new APIMessage("JSON invalide"));
+        }
+    }
+
+    private void handleGetCanalByUtilisateur(String idUtilisateurPart, HttpServletResponse res)
+            throws IOException {
+        try {
+            int idUtilisateur = Integer.parseInt(idUtilisateurPart);
+            Utilisateur utilisateur = utilisateurDAO.findById(idUtilisateur);
+
+            if (utilisateur == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Utilisateur introuvable"));
+                return;
+            }
+
+            List<Canal> canals = canalDAO.findByUtilisateurId(idUtilisateur);
+            writeJsonResponse(res, HttpServletResponse.SC_OK, canals);
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant d'utilisateur invalide"));
         }
     }
 

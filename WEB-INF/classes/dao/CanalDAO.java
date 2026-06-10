@@ -7,6 +7,8 @@ public interface CanalDAO {
 
     List<Canal> findAll();
 
+    List<Canal> findByUtilisateurId(int idUtilisateur);
+
     Canal findById(int idCanal);
 
     Canal findBySlug(String slug);

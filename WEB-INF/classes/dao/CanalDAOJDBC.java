@@ -35,6 +35,27 @@ public class CanalDAOJDBC implements CanalDAO {
     }
 
     @Override
+    public List<Canal> findByUtilisateurId(int idUtilisateur) {
+        String sql = "SELECT c.* FROM canal c "
+                + "JOIN membre_de m ON c.\"idCanal\" = m.\"idCanal\" "
+                + "WHERE m.\"idUtilisateur\" = ?";
+        List<Canal> canaux = new ArrayList<>();
+        try (Connection conn = dbManager.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idUtilisateur);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    canaux.add(mapResultSetToCanal(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return canaux;
+    }
+
+    @Override
     public Canal findById(int idCanal) {
         String sql = "SELECT * FROM canal WHERE \"idCanal\" = ?";
         try (Connection conn = dbManager.getConnection();
