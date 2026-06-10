@@ -67,8 +67,8 @@ export async function modifierMessageAPI(idMessage: number, nouveauContenu: stri
 /**
  * API - Supprimer un message
  */
-export async function supprimerMessageAPI(idMessage: number): Promise<void> {
-    const response = await fetch(`${BASE_URL}/messages/${idMessage}`, {
+export async function supprimerMessageAPI(idCanal: number, idMessage: number): Promise<void> {
+    const response = await fetch(`${BASE_URL}/canaux/${idCanal}/messages/${idMessage}`, {
         method: 'DELETE'
     });
 

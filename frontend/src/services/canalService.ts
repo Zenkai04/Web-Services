@@ -25,6 +25,19 @@ export async function fetchCanauxAPI(): Promise<Canal[]> {
     return await response.json();
 }
 
+/**
+ * Récupère la liste des canaux auxquels appartient l'utilisateur depuis l'API Java
+ */
+export async function fetchCanauxByUserId(idUtilisateur: number): Promise<Canal[]> {
+    const response = await fetch(`${BASE_URL}/canaux/utilisateurs/${idUtilisateur}`);
+
+    if (!response.ok) {
+        throw new Error(`Erreur HTTP : ${response.status} - Impossible de charger les canaux`);
+    }
+
+    return await response.json();
+}
+
 export async function creerCanalAPI(nom: string, description: string, typeCanal: string, idAdmin: number): Promise<Canal> {
     const response = await fetch(`${BASE_URL}/canaux`, {
         method: 'POST',
