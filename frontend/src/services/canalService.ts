@@ -24,3 +24,24 @@ export async function fetchCanauxAPI(): Promise<Canal[]> {
 
     return await response.json();
 }
+
+export async function creerCanalAPI(nom: string, description: string, typeCanal: string, idAdmin: number): Promise<Canal> {
+    const response = await fetch(`${BASE_URL}/canaux`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            nom,
+            description,
+            typeCanal,
+            idAdmin
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Erreur HTTP : ${response.status} - Impossible de créer le canal`);
+    }
+
+    return await response.json();
+}

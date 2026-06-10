@@ -1,5 +1,3 @@
-// src/services/messageService.ts
-
 export interface Message {
     idMessage: number;
     idUtilisateur: number;
@@ -9,18 +7,10 @@ export interface Message {
     dateModification: string | null;
 }
 
-// On garde ce dictionnaire pour l'instant pour que le Dashboard continue d'afficher
-// les pseudos ("alice", "bob"...) en attendant une API pour les utilisateurs.
-export const MOCK_PSEUDOS: { [key: number]: string } = {
-    1: 'alice',
-    2: 'bob',
-    3: 'charlie'
-};
-
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 /**
- * API - Récupère les messages d'un canal spécifique (Géré par CanalRestAPI)
+ * API - Récupère les messages d'un canal spécifique
  */
 export async function fetchMessagesByCanalAPI(idCanal: number): Promise<Message[]> {
     const response = await fetch(`${BASE_URL}/canaux/${idCanal}/messages`);
@@ -33,7 +23,7 @@ export async function fetchMessagesByCanalAPI(idCanal: number): Promise<Message[
 }
 
 /**
- * API - Envoie un message dans un canal (Géré par MessageRestAPI)
+ * API - Envoie un message dans un canal
  */
 export async function envoyerMessageAPI(idCanal: number, idUtilisateur: number, contenu: string): Promise<Message> {
     const response = await fetch(`${BASE_URL}/messages`, {
@@ -56,7 +46,7 @@ export async function envoyerMessageAPI(idCanal: number, idUtilisateur: number, 
 }
 
 /**
- * API - Modifier le contenu d'un message (Géré par MessageRestAPI)
+ * API - Modifier le contenu d'un message
  */
 export async function modifierMessageAPI(idMessage: number, nouveauContenu: string): Promise<void> {
     const response = await fetch(`${BASE_URL}/messages/${idMessage}`, {
@@ -75,7 +65,7 @@ export async function modifierMessageAPI(idMessage: number, nouveauContenu: stri
 }
 
 /**
- * API - Supprimer un message (Géré par MessageRestAPI)
+ * API - Supprimer un message
  */
 export async function supprimerMessageAPI(idMessage: number): Promise<void> {
     const response = await fetch(`${BASE_URL}/messages/${idMessage}`, {
