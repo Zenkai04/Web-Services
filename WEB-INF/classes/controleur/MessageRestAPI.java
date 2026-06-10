@@ -125,7 +125,7 @@ public class MessageRestAPI extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
         writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                new APIMessage("Méthode DELETE non autorisée sur cette ressource"));
+                new APIMessage("La suppression d'un message doit se faire via son canal"));
     }
     
     @Override

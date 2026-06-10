@@ -164,10 +164,22 @@ public class CanalRestAPI extends HttpServlet {
             return;
         }
 
+        // DELETE /canaux/{id}/messages/{idMessage}
+        if (parts.length == 4 && "messages".equals(parts[2])) {
+            handleDeleteMessageFromCanal(parts[1], parts[3], res);
+            return;
+        }
+
         // DELETE /canaux/{id}/membres
         if (parts.length == 3 && "membres".equals(parts[2])) {
             writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
                     new APIMessage("La suppression de membres via cette URI n'est pas autorisee"));
+            return;
+        }
+
+        // DELETE /canaux/{id}/membres/{idUtilisateur}
+        if (parts.length == 4 && "membres".equals(parts[2])) {
+            handleRemoveMembreFromCanal(parts[1], parts[3], res);
             return;
         }
 
@@ -342,6 +354,76 @@ public class CanalRestAPI extends HttpServlet {
         } catch (Exception e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                     new APIMessage("JSON invalide"));
+        }
+    }
+
+    private void handleDeleteMessageFromCanal(String idCanalPart, String idMessagePart,
+            HttpServletResponse res) throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+            int idMessage = Integer.parseInt(idMessagePart);
+
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            Message message = messageDAO.findById(idMessage);
+
+            if (message == null || message.getIdCanal() != idCanal) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Message introuvable dans ce canal"));
+                return;
+            }
+
+            boolean deleted = messageDAO.delete(idMessage);
+
+            if (!deleted) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new APIMessage("Suppression du message impossible"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK,
+                    new APIMessage("Message supprime du canal"));
+
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de canal ou de message invalide"));
+        }
+    }
+
+    private void handleRemoveMembreFromCanal(String idCanalPart, String idUtilisateurPart,
+            HttpServletResponse res) throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+            int idUtilisateur = Integer.parseInt(idUtilisateurPart);
+
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            boolean removed = membreCanalDAO.removeMembre(idUtilisateur, idCanal);
+
+            if (!removed) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Membre introuvable dans ce canal"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK,
+                    new APIMessage("Membre supprime du canal"));
+
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de canal ou d'utilisateur invalide"));
         }
     }
 
