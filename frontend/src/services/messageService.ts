@@ -3,7 +3,7 @@ export interface Message {
     idUtilisateur: number;
     idCanal: number;
     contenu: string;
-    dateCreation: string;
+    dateCreation: number;
     dateModification: string | null;
 }
 
@@ -26,7 +26,7 @@ export async function fetchMessagesByCanalAPI(idCanal: number): Promise<Message[
  * API - Envoie un message dans un canal
  */
 export async function envoyerMessageAPI(idCanal: number, idUtilisateur: number, contenu: string): Promise<Message> {
-    const response = await fetch(`${BASE_URL}/messages`, {
+    const response = await fetch(`${BASE_URL}/canaux/${idCanal}/messages`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
