@@ -1,7 +1,7 @@
 // src/pages/Dashboard.tsx
 import { useState, useEffect } from 'react';
 import ListeCanaux from '../components/ListeCanaux';
-import { fetchCanauxAPI, creerCanalAPI, type Canal } from '../services/canalService';
+import { fetchCanauxAPI, creerCanalAPI, type Canal, fetchCanauxByUserId } from '../services/canalService';
 import {
     fetchMessagesByCanalAPI,
     envoyerMessageAPI,
@@ -33,6 +33,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
     const [pseudos, setPseudos] = useState<{ [key: number]: string }>({});
 
+    // Nouveaux états pour la gestion des membres du canal privé
+    const [tousLesUtilisateurs, setTousLesUtilisateurs] = useState<Utilisateur[]>([]);
+    const [membresSelectionnes, setMembresSelectionnes] = useState<number[]>([]);
+
     const chargerMessages = async () => {
         if (!selectedCanal) return;
         setLoadingMessages(true);
@@ -51,17 +55,19 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         }
     };
 
-    // Chargement initial des canaux
+    // Chargement initial des canaux et des utilisateurs
     useEffect(() => {
         const chargerDonneesInitiales = async () => {
             try {
                 // On lance le chargement des canaux et des utilisateurs en parallèle
                 const [dataCanaux, dataUtilisateurs] = await Promise.all([
                     fetchCanauxAPI(),
+                    // fetchCanauxByUserId(user.idUtilisateur),
                     fetchUtilisateursAPI()
                 ]);
 
                 setCanaux(dataCanaux);
+                setTousLesUtilisateurs(dataUtilisateurs); // Sauvegarde de la liste complète des utilisateurs
 
                 // On transforme le tableau d'utilisateurs en dictionnaire { id: pseudo }
                 const dictionnairePseudos: { [key: number]: string } = {};
@@ -85,6 +91,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         chargerMessages();
     }, [selectedCanal]);
 
+    // Gère l'ajout/retrait d'un utilisateur sélectionné pour le canal privé
+    const handleToggleMembre = (idUtilisateur: number) => {
+        setMembresSelectionnes((prev) =>
+            prev.includes(idUtilisateur)
+                ? prev.filter((id) => id !== idUtilisateur)
+                : [...prev, idUtilisateur]
+        );
+    };
+
     // Action : Envoyer un message
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -106,7 +121,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
         try {
             await modifierMessageAPI(idMessage, nouveauTexte);
-
             await chargerMessages();
         } catch (err) {
             alert("Erreur lors de la modification du message.");
@@ -115,34 +129,53 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
     // Action : Supprimer un message (Auteur ou Admin du canal)
     const handleDeleteMessage = async (idMessage: number) => {
+        if (!selectedCanal) return;
+
         if (!confirm("Voulez-vous vraiment supprimer ce message ?")) return;
 
         try {
-            await supprimerMessageAPI(idMessage);
-
+            await supprimerMessageAPI(selectedCanal.idCanal, idMessage);
             await chargerMessages();
         } catch (err) {
             alert("Erreur lors de la suppression du message.");
         }
     };
 
+    // Action : Créer un canal (et lui attribuer ses membres s'il est privé)
     const handleCreateCanal = async (e: React.FormEvent) => {
         e.preventDefault();
         if (nomNouveauCanal === '' || descNouveauCanal === '') return;
 
         try {
+            // 1. Création du canal de base
             const canalCree = await creerCanalAPI(nomNouveauCanal, descNouveauCanal, typeNouveauCanal, user.idUtilisateur);
+
+            // 2. Si le canal est privé, on lie les membres sélectionnés en parallèle
+            if (typeNouveauCanal === 'privé' && membresSelectionnes.length > 0) {
+                await Promise.all(
+                    membresSelectionnes.map((idMembre) =>
+                        fetch(`${import.meta.env.VITE_API_URL}/canaux/${canalCree.idCanal}/membres`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ idUtilisateur: idMembre })
+                        })
+                    )
+                );
+            }
+
+            // 3. Mise à jour des états et fermeture du modal
             setCanaux((prev) => [...prev, canalCree]);
             setIsModalOpen(false);
             setNomNouveauCanal('');
             setDescNouveauCanal('');
             setTypeNouveauCanal('public');
+            setMembresSelectionnes([]); // Réinitialisation des membres cochés
         } catch (err) {
             console.error(err);
         }
     };
-
-
 
     return (
         <div className="dashboard-layout">
@@ -172,7 +205,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             {/* Zone principale de discussion */}
             <main className="main-content">
-            {selectedCanal ? (
+                {selectedCanal ? (
                     <div className="chat-container">
                         <div className="chat-header">
                             <h2>{selectedCanal.nom}</h2>
@@ -266,9 +299,36 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                             <option value="public">Public</option>
                             <option value="privé">Privé</option>
                         </select>
+
+                        {/* Liste des cases à cocher affichée uniquement si le canal est configuré sur 'privé' */}
+                        {typeNouveauCanal === 'privé' && (
+                            <div className="membres-selection" style={{ margin: '15px 0', textAlign: 'left' }}>
+                                <p><strong>Sélectionner les membres du canal privé :</strong></p>
+                                <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px' }}>
+                                    {tousLesUtilisateurs
+                                        .filter((u) => u.idUtilisateur !== user.idUtilisateur) // On exclut l'utilisateur actuel (créateur)
+                                        .map((u) => (
+                                            <label key={u.idUtilisateur} style={{ display: 'block', margin: '5px 0', cursor: 'pointer' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={membresSelectionnes.includes(u.idUtilisateur)}
+                                                    onChange={() => handleToggleMembre(u.idUtilisateur)}
+                                                    style={{ marginRight: '8px' }}
+                                                />
+                                                {u.pseudo}
+                                            </label>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        )}
+
                         <button type={"submit"}>Valider</button>
                     </form>
-                    <button type={"button"} onClick={() => setIsModalOpen(false)}>Fermer</button>
+                    <button type={"button"} onClick={() => {
+                        setIsModalOpen(false);
+                        setMembresSelectionnes([]); // Reset en cas de fermeture manuelle
+                    }}>Fermer</button>
                 </div>
             )}
         </div>
