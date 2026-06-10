@@ -10,7 +10,6 @@ import dto.Canal;
 import dto.Utilisateur;
 import dto.UtilisateurPublic;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import utils.PasswordUtils;
@@ -20,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @WebServlet("/utilisateurs/*")
-public class UtilisateurRestAPI extends HttpServlet {
+public class UtilisateurRestAPI extends SecuredServelet {
 
     private final UtilisateurDAO utilisateurDAO = DAOFactory.getInstance().getUtilisateurDAO();
     private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
@@ -37,6 +36,10 @@ public class UtilisateurRestAPI extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -63,6 +66,10 @@ public class UtilisateurRestAPI extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -77,6 +84,10 @@ public class UtilisateurRestAPI extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -99,6 +110,10 @@ public class UtilisateurRestAPI extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
                 new APIMessage("La suppression de l'utilisateur n'est pas autorisee"));
     }

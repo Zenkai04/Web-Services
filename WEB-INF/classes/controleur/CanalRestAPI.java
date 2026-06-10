@@ -12,7 +12,6 @@ import dto.Message;
 import dto.Utilisateur;
 import dto.UtilisateurPublic;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -21,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @WebServlet("/canaux/*")
-public class CanalRestAPI extends HttpServlet {
+public class CanalRestAPI extends SecuredServelet {
 
     private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
     private final MessageDAO messageDAO = DAOFactory.getInstance().getMessageDAO();
@@ -39,6 +38,10 @@ public class CanalRestAPI extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -70,6 +73,10 @@ public class CanalRestAPI extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -96,6 +103,10 @@ public class CanalRestAPI extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -124,6 +135,10 @@ public class CanalRestAPI extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {

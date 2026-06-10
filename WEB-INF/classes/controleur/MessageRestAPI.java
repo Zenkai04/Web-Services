@@ -6,7 +6,6 @@ import dao.MessageDAO;
 import dto.APIMessage;
 import dto.Message;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -14,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 
 @WebServlet("/messages/*")
-public class MessageRestAPI extends HttpServlet {
+public class MessageRestAPI extends SecuredServelet {
 
     private final MessageDAO messageDAO = DAOFactory.getInstance().getMessageDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -29,6 +28,10 @@ public class MessageRestAPI extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -50,6 +53,10 @@ public class MessageRestAPI extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
                 new APIMessage("La creation d'un message doit se faire via son canal"));
     }
@@ -57,6 +64,10 @@ public class MessageRestAPI extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -79,6 +90,10 @@ public class MessageRestAPI extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        if (!checkAuthentication(req, res)) {
+            return;
+        }
+
         writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
                 new APIMessage("La suppression d'un message doit se faire via son canal"));
     }

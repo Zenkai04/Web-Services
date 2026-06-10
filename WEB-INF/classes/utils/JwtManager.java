@@ -7,6 +7,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Date;
 
@@ -64,4 +65,16 @@ public class JwtManager {
         Claims claims = parseToken(token);
         return claims.get("pseudo", String.class);
     }
+
+    public static String extractTokenFromRequest(HttpServletRequest req) {
+        String authHeader = req.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        return authHeader.substring("Bearer ".length()).trim();
+    }
+
+
 }
