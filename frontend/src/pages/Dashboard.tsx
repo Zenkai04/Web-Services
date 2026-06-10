@@ -33,6 +33,24 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
     const [pseudos, setPseudos] = useState<{ [key: number]: string }>({});
 
+    const chargerMessages = async () => {
+        if (!selectedCanal) return;
+        setLoadingMessages(true);
+        try {
+            const data = await fetchMessagesByCanalAPI(selectedCanal.idCanal);
+
+            // On trie les messages du plus ancien au plus récent
+            // 'a' et 'b' représentent deux messages que JavaScript compare
+            // Si 'a' et 'b' ont été créé en même temps, on compare avec l'ID du message.
+            data.sort((a, b) => (a.dateCreation - b.dateCreation) || (a.idMessage - b.idMessage));
+            setMessages(data);
+        } catch (err: any) {
+            console.error(err);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
+
     // Chargement initial des canaux
     useEffect(() => {
         const chargerDonneesInitiales = async () => {
@@ -64,20 +82,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
     // Chargement automatique des messages quand le canal change
     useEffect(() => {
-        if (!selectedCanal) return;
-
-        const chargerMessages = async () => {
-            setLoadingMessages(true);
-            try {
-                const data = await fetchMessagesByCanalAPI(selectedCanal.idCanal);
-                setMessages(data);
-            } catch (err: any) {
-                console.error(err);
-            } finally {
-                setLoadingMessages(false);
-            }
-        };
-
         chargerMessages();
     }, [selectedCanal]);
 
@@ -87,8 +91,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         if (!selectedCanal || nouveauContenu.trim() === '') return;
 
         try {
-            const msgCree = await envoyerMessageAPI(selectedCanal.idCanal, user.idUtilisateur, nouveauContenu);
-            setMessages((prev) => [...prev, msgCree]);
+            await envoyerMessageAPI(selectedCanal.idCanal, user.idUtilisateur, nouveauContenu);
+            await chargerMessages();
             setNouveauContenu('');
         } catch (err) {
             console.error(err);
@@ -102,10 +106,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
         try {
             await modifierMessageAPI(idMessage, nouveauTexte);
-            // Mise à jour de l'affichage local (on remplace le contenu du message modifié)
-            setMessages((prev) =>
-                prev.map((msg) => msg.idMessage === idMessage ? { ...msg, contenu: nouveauTexte } : msg)
-            );
+
+            await chargerMessages();
         } catch (err) {
             alert("Erreur lors de la modification du message.");
         }
@@ -117,8 +119,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
         try {
             await supprimerMessageAPI(idMessage);
-            // Mise à jour de l'affichage local (on retire le message de la liste)
-            setMessages((prev) => prev.filter((msg) => msg.idMessage !== idMessage));
+
+            await chargerMessages();
         } catch (err) {
             alert("Erreur lors de la suppression du message.");
         }
