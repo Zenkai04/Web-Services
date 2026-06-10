@@ -124,69 +124,14 @@ public class MessageRestAPI extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-
-        String pathInfo = req.getPathInfo();
-
-        if (pathInfo == null || pathInfo.equals("/")) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Identifiant de message manquant"));
-            return;
-        }
-
-        String[] parts = pathInfo.split("/");
-
-        if (parts.length != 2) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide pour la suppression de message"));
-            return;
-        }
-
-        try {
-            int idMessage = Integer.parseInt(parts[1]);
-
-            boolean deleted = messageDAO.delete(idMessage);
-
-            if (!deleted) {
-                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new APIMessage("Message introuvable"));
-                return;
-            }
-
-            writeJsonResponse(res, HttpServletResponse.SC_OK,
-                    new APIMessage("Message supprimé avec succès"));
-
-        } catch (NumberFormatException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("ID de message invalide"));
-        }
+        writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                new APIMessage("Méthode DELETE non autorisée sur cette ressource"));
     }
     
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
         throws IOException {
-
-        String pathInfo = req.getPathInfo();
-
-        if (pathInfo != null && !pathInfo.equals("/")) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide pour la création de message"));
-            return;
-        }
-
-        try {
-            Message newMessage = objectMapper.readValue(req.getReader(), Message.class);
-
-            boolean created = messageDAO.save(newMessage);
-
-            if (created) {
-                writeJsonResponse(res, HttpServletResponse.SC_CREATED, newMessage);
-            } else {
-                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                        new APIMessage("Erreur lors de la création du message"));
-            }
-        } catch (IOException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Données de message invalides"));
-        }
+    writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+            new APIMessage("Méthode POST non autorisée sur cette ressource"));
     }
 }
