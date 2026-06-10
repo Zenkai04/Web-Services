@@ -9,6 +9,7 @@ import dto.APIMessage;
 import dto.Canal;
 import dto.Message;
 import dto.Utilisateur;
+import dto.UtilisateurPublic;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -278,7 +279,7 @@ public class CanalRestAPI extends HttpServlet {
 
             List<Utilisateur> membres = membreCanalDAO.findByCanal(idCanal);
 
-            writeJsonResponse(res, HttpServletResponse.SC_OK, membres);
+            writeJsonResponse(res, HttpServletResponse.SC_OK, toPublicList(membres));
 
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
@@ -430,4 +431,21 @@ public class CanalRestAPI extends HttpServlet {
     private boolean isCollectionPath(String pathInfo) {
         return pathInfo == null || "/".equals(pathInfo);
     }
+
+    private UtilisateurPublic toPublic(Utilisateur utilisateur) {
+        if (utilisateur == null) return null;
+        UtilisateurPublic publicUser = new UtilisateurPublic();
+        publicUser.setIdUtilisateur(utilisateur.getIdUtilisateur());
+        publicUser.setPseudo(utilisateur.getPseudo());
+        publicUser.setEmail(utilisateur.getEmail());
+        publicUser.setDateCreation(utilisateur.getDateCreation());
+        return publicUser;
+    }
+
+    private List<UtilisateurPublic> toPublicList(List<Utilisateur> utilisateurs) {
+        return utilisateurs.stream()
+                .map(this::toPublic)
+                .toList();
+    }
+
 }
