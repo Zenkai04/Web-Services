@@ -164,7 +164,29 @@ public class MessageRestAPI extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
         throws IOException {
-    writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-            new APIMessage("Méthode POST non autorisée sur cette ressource"));
+
+        String pathInfo = req.getPathInfo();
+
+        if (pathInfo != null && !pathInfo.equals("/")) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("URI invalide pour la création de message"));
+            return;
+        }
+
+        try {
+            Message newMessage = objectMapper.readValue(req.getReader(), Message.class);
+
+            boolean created = messageDAO.save(newMessage);
+
+            if (created) {
+                writeJsonResponse(res, HttpServletResponse.SC_CREATED, newMessage);
+            } else {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new APIMessage("Erreur lors de la création du message"));
+            }
+        } catch (IOException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Données de message invalides"));
+        }
     }
 }
