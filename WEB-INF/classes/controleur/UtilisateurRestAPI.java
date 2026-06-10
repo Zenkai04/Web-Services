@@ -5,12 +5,14 @@ import dao.DAOFactory;
 import dao.UtilisateurDAO;
 import dto.APIMessage;
 import dto.Utilisateur;
+import dto.UtilisateurPublic;
 import utils.PasswordUtils;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @WebServlet("/utilisateurs/*")
 public class UtilisateurRestAPI extends HttpServlet {
@@ -26,6 +28,16 @@ public class UtilisateurRestAPI extends HttpServlet {
         res.getWriter().print(objectMapper.writeValueAsString(data));
     }
 
+    private UtilisateurPublic toPublic(Utilisateur utilisateur) {
+        return new UtilisateurPublic(utilisateur);
+    }
+
+    private List<UtilisateurPublic> toPublicList(List<Utilisateur> utilisateurs) {
+        return utilisateurs.stream()
+                .map(this::toPublic)
+                .collect(Collectors.toList());
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
@@ -35,7 +47,7 @@ public class UtilisateurRestAPI extends HttpServlet {
         // GET /utilisateurs
         if (pathInfo == null || pathInfo.equals("/")) {
             List<Utilisateur> utilisateurs = utilisateurDAO.findAll();
-            writeJsonResponse(res, HttpServletResponse.SC_OK, utilisateurs);
+            writeJsonResponse(res, HttpServletResponse.SC_OK, toPublicList(utilisateurs));
             return;
         }
 
@@ -66,7 +78,7 @@ public class UtilisateurRestAPI extends HttpServlet {
                 boolean success = utilisateurDAO.save(utilisateur);
 
                 if (success) {
-                    writeJsonResponse(res, HttpServletResponse.SC_CREATED, utilisateur);
+                    writeJsonResponse(res, HttpServletResponse.SC_CREATED, toPublic(utilisateur));
                 } else {
                     writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
                             new APIMessage("Erreur lors de la création de l'utilisateur"));
@@ -118,7 +130,7 @@ public class UtilisateurRestAPI extends HttpServlet {
             boolean updated = utilisateurDAO.update(updatedUtilisateur);
 
             if (updated) {
-                writeJsonResponse(res, HttpServletResponse.SC_OK, updatedUtilisateur);
+                writeJsonResponse(res, HttpServletResponse.SC_OK, toPublic(updatedUtilisateur));
             } else {
                 writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
                         new APIMessage("Erreur lors de la mise à jour de l'utilisateur"));
@@ -153,7 +165,7 @@ public class UtilisateurRestAPI extends HttpServlet {
                 return;
             }
 
-            writeJsonResponse(res, HttpServletResponse.SC_OK, utilisateur);
+            writeJsonResponse(res, HttpServletResponse.SC_OK, toPublic(utilisateur));
 
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
