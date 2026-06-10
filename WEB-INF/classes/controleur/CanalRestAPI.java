@@ -139,37 +139,40 @@ public class CanalRestAPI extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-        
-        // Cas 1 : DELETE /canaux/{id}
-        writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                new APIMessage("La suppression de canal n'est pas autorisee"));
 
-        // Cas 2 : DELETE /canaux/{id}/messages ou /canaux/{id}/membres
         String pathInfo = req.getPathInfo();
-        if (!isCollectionPath(pathInfo)) {
-            String[] parts = pathInfo.split("/");
+
+        if (pathInfo == null || pathInfo.equals("/")) {
+            writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    new APIMessage("La suppression de canal n'est pas autorisee"));
+            return;
         }
+
+        String[] parts = pathInfo.split("/");
+
+        // DELETE /canaux/{id}
+        if (parts.length == 2) {
+            writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    new APIMessage("La suppression de canal n'est pas autorisee"));
+            return;
+        }
+
+        // DELETE /canaux/{id}/messages
+        if (parts.length == 3 && "messages".equals(parts[2])) {
+            writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    new APIMessage("La suppression de messages via cette URI n'est pas autorisee"));
+            return;
+        }
+
+        // DELETE /canaux/{id}/membres
+        if (parts.length == 3 && "membres".equals(parts[2])) {
+            writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    new APIMessage("La suppression de membres via cette URI n'est pas autorisee"));
+            return;
+        }
+
         writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                 new APIMessage("URI invalide pour la suppression"));
-        try{
-            String[] parts = pathInfo.split("/");
-
-            if (parts.length == 3 && "messages".equals(parts[2])) {
-                writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                        new APIMessage("La suppression de messages via cette URI n'est pas autorisee"));
-                return;
-            }
-
-            if (parts.length == 3 && "membres".equals(parts[2])) {
-                writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                        new APIMessage("La suppression de membres via cette URI n'est pas autorisee"));
-                return;
-            }
-        } catch (Exception e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide pour la suppression"));
-        }
-
     }
 
     private void handleGetCanal(String idCanalPart, HttpServletResponse res)
