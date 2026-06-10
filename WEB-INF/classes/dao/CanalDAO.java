@@ -1,11 +1,10 @@
 package dao;
 
-import dto.Utilisateur;
 import dto.Canal;
 import java.util.List;
 
 public interface CanalDAO {
-    
+
     List<Canal> findAll();
 
     Canal findById(int idCanal);

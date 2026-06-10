@@ -10,7 +10,8 @@ public class Message {
     private Timestamp dateCreation;
     private Timestamp dateModification;
 
-    public Message(int idMessage, int idUtilisateur, int idCanal, String contenu, Timestamp dateCreation, Timestamp dateModification) {
+    public Message(int idMessage, int idUtilisateur, int idCanal, String contenu,
+            Timestamp dateCreation, Timestamp dateModification) {
         this.idMessage = idMessage;
         this.idUtilisateur = idUtilisateur;
         this.idCanal = idCanal;

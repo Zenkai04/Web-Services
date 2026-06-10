@@ -14,7 +14,8 @@ public class Canal {
     public Canal() {
     }
 
-    public Canal(int idCanal, int idAdmin, String nom, String description, String typeCanal, String slug, Timestamp dateCreation) {
+    public Canal(int idCanal, int idAdmin, String nom, String description,
+            String typeCanal, String slug, Timestamp dateCreation) {
         this.idCanal = idCanal;
         this.idAdmin = idAdmin;
         this.nom = nom;
@@ -58,7 +59,7 @@ public class Canal {
 
     public String getTypeCanal() {
         return typeCanal;
-    }   
+    }
 
     public void setTypeCanal(String typeCanal) {
         this.typeCanal = typeCanal;

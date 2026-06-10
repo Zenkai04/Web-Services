@@ -9,7 +9,8 @@ public class UtilisateurPublic {
     private String email;
     private Timestamp dateCreation;
 
-    public UtilisateurPublic() {}
+    public UtilisateurPublic() {
+    }
 
     public UtilisateurPublic(Utilisateur utilisateur) {
         this.idUtilisateur = utilisateur.getIdUtilisateur();

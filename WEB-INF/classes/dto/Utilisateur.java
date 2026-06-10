@@ -9,7 +9,8 @@ public class Utilisateur {
     private String motDePasseHash;
     private Timestamp dateCreation;
 
-    public Utilisateur(int idUtilisateur, String pseudo, String email, String motDePasseHash, Timestamp dateCreation) {
+    public Utilisateur(int idUtilisateur, String pseudo, String email,
+            String motDePasseHash, Timestamp dateCreation) {
         this.idUtilisateur = idUtilisateur;
         this.pseudo = pseudo;
         this.email = email;

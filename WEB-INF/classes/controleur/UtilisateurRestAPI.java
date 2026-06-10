@@ -6,9 +6,11 @@ import dao.UtilisateurDAO;
 import dto.APIMessage;
 import dto.Utilisateur;
 import dto.UtilisateurPublic;
-import utils.PasswordUtils;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import utils.PasswordUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,7 +20,6 @@ import java.util.stream.Collectors;
 public class UtilisateurRestAPI extends HttpServlet {
 
     private final UtilisateurDAO utilisateurDAO = DAOFactory.getInstance().getUtilisateurDAO();
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
@@ -28,32 +29,18 @@ public class UtilisateurRestAPI extends HttpServlet {
         res.getWriter().print(objectMapper.writeValueAsString(data));
     }
 
-    private UtilisateurPublic toPublic(Utilisateur utilisateur) {
-        return new UtilisateurPublic(utilisateur);
-    }
-
-    private List<UtilisateurPublic> toPublicList(List<Utilisateur> utilisateurs) {
-        return utilisateurs.stream()
-                .map(this::toPublic)
-                .collect(Collectors.toList());
-    }
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-
         String pathInfo = req.getPathInfo();
 
-        // GET /utilisateurs
-        if (pathInfo == null || pathInfo.equals("/")) {
-            List<Utilisateur> utilisateurs = utilisateurDAO.findAll();
-            writeJsonResponse(res, HttpServletResponse.SC_OK, toPublicList(utilisateurs));
+        if (isCollectionPath(pathInfo)) {
+            handleGetUtilisateurs(res);
             return;
         }
 
         String[] parts = pathInfo.split("/");
 
-        // GET /utilisateurs/{id}
         if (parts.length == 2) {
             handleGetUtilisateur(parts[1], res);
             return;
@@ -68,29 +55,13 @@ public class UtilisateurRestAPI extends HttpServlet {
             throws IOException {
         String pathInfo = req.getPathInfo();
 
-        if (pathInfo == null || pathInfo.equals("/")) {
-            try {
-                Utilisateur utilisateur = objectMapper.readValue(req.getInputStream(), Utilisateur.class);
-
-                utilisateur.setMotDePasseHash(
-                        PasswordUtils.hashPassword(utilisateur.getMotDePasseHash()));
-                
-                boolean success = utilisateurDAO.save(utilisateur);
-
-                if (success) {
-                    writeJsonResponse(res, HttpServletResponse.SC_CREATED, toPublic(utilisateur));
-                } else {
-                    writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                            new APIMessage("Erreur lors de la création de l'utilisateur"));
-                }
-            } catch (IOException e) {
-                writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                        new APIMessage("JSON invalide"));
-            }
-        } else {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide"));
+        if (isCollectionPath(pathInfo)) {
+            handleCreateUtilisateur(req, res);
+            return;
         }
+
+        writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                new APIMessage("URI invalide"));
     }
 
     @Override
@@ -98,51 +69,21 @@ public class UtilisateurRestAPI extends HttpServlet {
             throws IOException {
         String pathInfo = req.getPathInfo();
 
-        if (pathInfo == null || pathInfo.equals("/")) {
+        if (isCollectionPath(pathInfo)) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                     new APIMessage("Identifiant d'utilisateur manquant"));
             return;
         }
 
         String[] parts = pathInfo.split("/");
-        if (parts.length != 2) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide pour la mise à jour d'utilisateur"));
+
+        if (parts.length == 2) {
+            handleUpdateUtilisateur(parts[1], req, res);
             return;
         }
-        try {
-            int idUtilisateur = Integer.parseInt(parts[1]);
 
-            Utilisateur existingUtilisateur = utilisateurDAO.findById(idUtilisateur);
-
-            if (existingUtilisateur == null) {
-                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new APIMessage("Utilisateur introuvable"));
-                return;
-            }
-
-            Utilisateur updatedUtilisateur = objectMapper.readValue(req.getReader(), Utilisateur.class);
-            
-            updatedUtilisateur.setMotDePasseHash(PasswordUtils.hashPassword(updatedUtilisateur.getMotDePasseHash()));
-
-            updatedUtilisateur.setIdUtilisateur(idUtilisateur);
-
-            boolean updated = utilisateurDAO.update(updatedUtilisateur);
-
-            if (updated) {
-                writeJsonResponse(res, HttpServletResponse.SC_OK, toPublic(updatedUtilisateur));
-            } else {
-                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                        new APIMessage("Erreur lors de la mise à jour de l'utilisateur"));
-            }
-
-        } catch (NumberFormatException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Identifiant d'utilisateur invalide"));
-        } catch (IOException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("JSON invalide"));
-        }
+        writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                new APIMessage("URI invalide pour la mise a jour d'utilisateur"));
     }
 
     @Override
@@ -152,11 +93,15 @@ public class UtilisateurRestAPI extends HttpServlet {
                 new APIMessage("La suppression de l'utilisateur n'est pas autorisee"));
     }
 
-    private void handleGetUtilisateur(String idStr, HttpServletResponse res)
+    private void handleGetUtilisateurs(HttpServletResponse res) throws IOException {
+        List<Utilisateur> utilisateurs = utilisateurDAO.findAll();
+        writeJsonResponse(res, HttpServletResponse.SC_OK, toPublicList(utilisateurs));
+    }
+
+    private void handleGetUtilisateur(String idUtilisateurPart, HttpServletResponse res)
             throws IOException {
         try {
-            int idUtilisateur = Integer.parseInt(idStr);
-
+            int idUtilisateur = Integer.parseInt(idUtilisateurPart);
             Utilisateur utilisateur = utilisateurDAO.findById(idUtilisateur);
 
             if (utilisateur == null) {
@@ -166,10 +111,80 @@ public class UtilisateurRestAPI extends HttpServlet {
             }
 
             writeJsonResponse(res, HttpServletResponse.SC_OK, toPublic(utilisateur));
-
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
                     new APIMessage("Identifiant d'utilisateur invalide"));
         }
+    }
+
+    private void handleCreateUtilisateur(HttpServletRequest req, HttpServletResponse res)
+            throws IOException {
+        try {
+            Utilisateur utilisateur = objectMapper.readValue(req.getInputStream(), Utilisateur.class);
+            utilisateur.setMotDePasseHash(
+                    PasswordUtils.hashPassword(utilisateur.getMotDePasseHash()));
+
+            boolean created = utilisateurDAO.save(utilisateur);
+
+            if (!created) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new APIMessage("Erreur lors de la creation de l'utilisateur"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_CREATED, toPublic(utilisateur));
+        } catch (Exception e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("JSON invalide"));
+        }
+    }
+
+    private void handleUpdateUtilisateur(String idUtilisateurPart, HttpServletRequest req,
+            HttpServletResponse res) throws IOException {
+        try {
+            int idUtilisateur = Integer.parseInt(idUtilisateurPart);
+            Utilisateur existingUtilisateur = utilisateurDAO.findById(idUtilisateur);
+
+            if (existingUtilisateur == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Utilisateur introuvable"));
+                return;
+            }
+
+            Utilisateur updatedUtilisateur = objectMapper.readValue(req.getReader(), Utilisateur.class);
+            updatedUtilisateur.setIdUtilisateur(idUtilisateur);
+            updatedUtilisateur.setMotDePasseHash(
+                    PasswordUtils.hashPassword(updatedUtilisateur.getMotDePasseHash()));
+
+            boolean updated = utilisateurDAO.update(updatedUtilisateur);
+
+            if (!updated) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new APIMessage("Erreur lors de la mise a jour de l'utilisateur"));
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK, toPublic(updatedUtilisateur));
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant d'utilisateur invalide"));
+        } catch (Exception e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("JSON invalide"));
+        }
+    }
+
+    private UtilisateurPublic toPublic(Utilisateur utilisateur) {
+        return new UtilisateurPublic(utilisateur);
+    }
+
+    private List<UtilisateurPublic> toPublicList(List<Utilisateur> utilisateurs) {
+        return utilisateurs.stream()
+                .map(this::toPublic)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isCollectionPath(String pathInfo) {
+        return pathInfo == null || "/".equals(pathInfo);
     }
 }
