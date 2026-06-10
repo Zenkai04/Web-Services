@@ -1,3 +1,5 @@
+// src/services/messageService.ts
+
 export interface Message {
     idMessage: number;
     idUtilisateur: number;
@@ -12,8 +14,14 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 /**
  * API - Récupère les messages d'un canal spécifique
  */
-export async function fetchMessagesByCanalAPI(idCanal: number): Promise<Message[]> {
-    const response = await fetch(`${BASE_URL}/canaux/${idCanal}/messages`);
+export async function fetchMessagesByCanalAPI(idCanal: number, token: string): Promise<Message[]> {
+    const response = await fetch(`${BASE_URL}/canaux/${idCanal}/messages`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
 
     if (!response.ok) {
         throw new Error(`Impossible de charger les messages du canal ${idCanal}`);
@@ -25,17 +33,14 @@ export async function fetchMessagesByCanalAPI(idCanal: number): Promise<Message[
 /**
  * API - Envoie un message dans un canal
  */
-export async function envoyerMessageAPI(idCanal: number, idUtilisateur: number, contenu: string): Promise<Message> {
+export async function envoyerMessageAPI(idCanal: number, idUtilisateur: number, contenu: string, token: string): Promise<Message> {
     const response = await fetch(`${BASE_URL}/canaux/${idCanal}/messages`, {
         method: 'POST',
         headers: {
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            idCanal,
-            idUtilisateur,
-            contenu
-        })
+        body: JSON.stringify({ idCanal, idUtilisateur, contenu })
     });
 
     if (!response.ok) {
@@ -48,15 +53,14 @@ export async function envoyerMessageAPI(idCanal: number, idUtilisateur: number, 
 /**
  * API - Modifier le contenu d'un message
  */
-export async function modifierMessageAPI(idMessage: number, nouveauContenu: string): Promise<void> {
+export async function modifierMessageAPI(idMessage: number, nouveauContenu: string, token: string): Promise<void> {
     const response = await fetch(`${BASE_URL}/messages/${idMessage}`, {
         method: 'PUT',
         headers: {
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            contenu: nouveauContenu
-        })
+        body: JSON.stringify({ contenu: nouveauContenu })
     });
 
     if (!response.ok) {
@@ -67,9 +71,13 @@ export async function modifierMessageAPI(idMessage: number, nouveauContenu: stri
 /**
  * API - Supprimer un message
  */
-export async function supprimerMessageAPI(idCanal: number, idMessage: number): Promise<void> {
+export async function supprimerMessageAPI(idCanal: number, idMessage: number, token: string): Promise<void> {
     const response = await fetch(`${BASE_URL}/canaux/${idCanal}/messages/${idMessage}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
     });
 
     if (!response.ok) {

@@ -1,12 +1,12 @@
-// src/pages/Login.tsx
 import { useState } from 'react';
 import { loginAPI, type Utilisateur } from '../services/authService';
 
 interface LoginProps {
     onLoginSuccess: (user: Utilisateur) => void;
+    onNavigateToRegister: () => void;
 }
 
-export default function Login({ onLoginSuccess }: LoginProps) {
+export default function Login({ onLoginSuccess, onNavigateToRegister }: LoginProps) {
     const [pseudo, setPseudo] = useState('');
     const [motDePasse, setMotDePasse] = useState('');
     const [erreur, setErreur] = useState<string | null>(null);
@@ -24,11 +24,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         setLoading(true);
 
         try {
-            // Appel direct à l'API (qui est actuellement branchée sur le mockup)
             const user = await loginAPI(pseudo, motDePasse);
             onLoginSuccess(user);
         } catch (err: any) {
-            // On attrape l'erreur envoyée par le service (fausse ou vraie 401)
             setErreur(err.message);
         } finally {
             setLoading(false);
@@ -36,13 +34,13 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     };
 
     return (
-        <div>
+        <div className="auth-page login-page">
             <h2>Connexion au Journal de Bord</h2>
 
-            <form onSubmit={handleSubmit}>
-                {erreur && <p>{erreur}</p>}
+            <form onSubmit={handleSubmit} className="auth-form">
+                {erreur && <p className="error-message">{erreur}</p>}
 
-                <div>
+                <div className="auth-fields">
                     <input
                         type="text"
                         placeholder="Entrez votre pseudo..."
@@ -58,12 +56,19 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                         onChange={(e) => setMotDePasse(e.target.value)}
                         disabled={loading}
                     />
-                </div>
 
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Connexion en cours...' : 'Entrer dans la messagerie'}
-                </button>
+                    <button type="submit" disabled={loading} className="btn-primary">
+                        {loading ? 'Connexion en cours...' : 'Se connecter'}
+                    </button>
+                </div>
             </form>
+
+            <div className="auth-footer">
+                <p>Vous n'avez pas encore de compte ?</p>
+                <button type="button" onClick={onNavigateToRegister} disabled={loading} className="btn-link">
+                    Créer un compte
+                </button>
+            </div>
         </div>
     );
 }
