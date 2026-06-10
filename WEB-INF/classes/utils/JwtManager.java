@@ -1,4 +1,4 @@
-package util;
+package utils;
 
 import dto.Utilisateur;
 
@@ -21,7 +21,7 @@ public class JwtManager {
             Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
     private JwtManager() {
-        
+        // Classe utilitaire : pas d'instanciation
     }
 
     public static String generateToken(Utilisateur utilisateur) {
@@ -39,10 +39,29 @@ public class JwtManager {
     }
 
     private static Claims parseToken(String token) {
-    return Jwts.parser()
-            .verifyWith(KEY)
-            .build()
-            .parseSignedClaims(token)
-            .getPayload();
-}
+        return Jwts.parser()
+                .verifyWith(KEY)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public static boolean isValidToken(String token) {
+        try {
+            parseToken(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static int extractUserId(String token) {
+        Claims claims = parseToken(token);
+        return Integer.parseInt(claims.getSubject());
+    }
+
+    public static String extractPseudo(String token) {
+        Claims claims = parseToken(token);
+        return claims.get("pseudo", String.class);
+    }
 }
