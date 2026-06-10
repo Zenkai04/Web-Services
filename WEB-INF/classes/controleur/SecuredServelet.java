@@ -29,4 +29,17 @@ public abstract class SecuredServelet extends HttpServlet {
 
         return true;
     }
+
+    protected int getAuthenticatedUserId(HttpServletRequest req) {
+        String token = JwtManager.extractTokenFromRequest(req);
+        return JwtManager.extractUserId(token);
+    }
+
+    protected void writeForbidden(HttpServletResponse res)
+            throws IOException {
+        res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        res.setContentType("application/json;charset=UTF-8");
+        res.getWriter().print(objectMapper.writeValueAsString(
+                new APIMessage("Acces refuse")));
+    }
 }

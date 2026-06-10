@@ -40,6 +40,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
             return;
         }
 
+        int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -55,7 +56,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
         }
 
         if (parts.length == 3 && "canaux".equals(parts[2])) {
-            handleGetCanalByUtilisateur(parts[1], res);
+            handleGetCanalByUtilisateur(parts[1], idUtilisateurConnecte, res);
             return;
         }
 
@@ -66,10 +67,6 @@ public class UtilisateurRestAPI extends SecuredServelet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-        if (!checkAuthentication(req, res)) {
-            return;
-        }
-
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -88,6 +85,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
             return;
         }
 
+        int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -99,7 +97,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
         String[] parts = pathInfo.split("/");
 
         if (parts.length == 2) {
-            handleUpdateUtilisateur(parts[1], req, res);
+            handleUpdateUtilisateur(parts[1], idUtilisateurConnecte, req, res);
             return;
         }
 
@@ -166,10 +164,16 @@ public class UtilisateurRestAPI extends SecuredServelet {
         }
     }
 
-    private void handleUpdateUtilisateur(String idUtilisateurPart, HttpServletRequest req,
-            HttpServletResponse res) throws IOException {
+    private void handleUpdateUtilisateur(String idUtilisateurPart, int idUtilisateurConnecte,
+            HttpServletRequest req, HttpServletResponse res) throws IOException {
         try {
             int idUtilisateur = Integer.parseInt(idUtilisateurPart);
+
+            if (idUtilisateurConnecte != idUtilisateur) {
+                writeForbidden(res);
+                return;
+            }
+
             Utilisateur existingUtilisateur = utilisateurDAO.findById(idUtilisateur);
 
             if (existingUtilisateur == null) {
@@ -201,10 +205,16 @@ public class UtilisateurRestAPI extends SecuredServelet {
         }
     }
 
-    private void handleGetCanalByUtilisateur(String idUtilisateurPart, HttpServletResponse res)
-            throws IOException {
+    private void handleGetCanalByUtilisateur(String idUtilisateurPart, int idUtilisateurConnecte,
+            HttpServletResponse res) throws IOException {
         try {
             int idUtilisateur = Integer.parseInt(idUtilisateurPart);
+
+            if (idUtilisateurConnecte != idUtilisateur) {
+                writeForbidden(res);
+                return;
+            }
+
             Utilisateur utilisateur = utilisateurDAO.findById(idUtilisateur);
 
             if (utilisateur == null) {

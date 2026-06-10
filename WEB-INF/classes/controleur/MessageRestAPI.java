@@ -1,9 +1,12 @@
 package controleur;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dao.CanalDAO;
 import dao.DAOFactory;
+import dao.MembreCanalDAO;
 import dao.MessageDAO;
 import dto.APIMessage;
+import dto.Canal;
 import dto.Message;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +18,9 @@ import java.util.List;
 @WebServlet("/messages/*")
 public class MessageRestAPI extends SecuredServelet {
 
+    private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
     private final MessageDAO messageDAO = DAOFactory.getInstance().getMessageDAO();
+    private final MembreCanalDAO membreCanalDAO = DAOFactory.getInstance().getMembreCanalDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
@@ -32,17 +37,18 @@ public class MessageRestAPI extends SecuredServelet {
             return;
         }
 
+        int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
-            handleGetMessages(res);
+            handleGetMessages(idUtilisateurConnecte, res);
             return;
         }
 
         String[] parts = pathInfo.split("/");
 
         if (parts.length == 2) {
-            handleGetMessage(parts[1], res);
+            handleGetMessage(parts[1], idUtilisateurConnecte, res);
             return;
         }
 
@@ -68,6 +74,7 @@ public class MessageRestAPI extends SecuredServelet {
             return;
         }
 
+        int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -79,7 +86,7 @@ public class MessageRestAPI extends SecuredServelet {
         String[] parts = pathInfo.split("/");
 
         if (parts.length == 2) {
-            handleUpdateMessage(parts[1], req, res);
+            handleUpdateMessage(parts[1], idUtilisateurConnecte, req, res);
             return;
         }
 
@@ -98,13 +105,16 @@ public class MessageRestAPI extends SecuredServelet {
                 new APIMessage("La suppression d'un message doit se faire via son canal"));
     }
 
-    private void handleGetMessages(HttpServletResponse res) throws IOException {
-        List<Message> messages = messageDAO.findAll();
+    private void handleGetMessages(int idUtilisateurConnecte, HttpServletResponse res)
+            throws IOException {
+        List<Message> messages = messageDAO.findAll().stream()
+                .filter(message -> canAccessMessage(idUtilisateurConnecte, message))
+                .toList();
         writeJsonResponse(res, HttpServletResponse.SC_OK, messages);
     }
 
-    private void handleGetMessage(String idMessagePart, HttpServletResponse res)
-            throws IOException {
+    private void handleGetMessage(String idMessagePart, int idUtilisateurConnecte,
+            HttpServletResponse res) throws IOException {
         try {
             int idMessage = Integer.parseInt(idMessagePart);
             Message message = messageDAO.findById(idMessage);
@@ -115,6 +125,11 @@ public class MessageRestAPI extends SecuredServelet {
                 return;
             }
 
+            if (!canAccessMessage(idUtilisateurConnecte, message)) {
+                writeForbidden(res);
+                return;
+            }
+
             writeJsonResponse(res, HttpServletResponse.SC_OK, message);
         } catch (NumberFormatException e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
@@ -122,8 +137,8 @@ public class MessageRestAPI extends SecuredServelet {
         }
     }
 
-    private void handleUpdateMessage(String idMessagePart, HttpServletRequest req,
-            HttpServletResponse res) throws IOException {
+    private void handleUpdateMessage(String idMessagePart, int idUtilisateurConnecte,
+            HttpServletRequest req, HttpServletResponse res) throws IOException {
         try {
             int idMessage = Integer.parseInt(idMessagePart);
 
@@ -132,6 +147,11 @@ public class MessageRestAPI extends SecuredServelet {
             if (existingMessage == null) {
                 writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
                         new APIMessage("Message introuvable"));
+                return;
+            }
+
+            if (existingMessage.getIdUtilisateur() != idUtilisateurConnecte) {
+                writeForbidden(res);
                 return;
             }
 
@@ -158,5 +178,20 @@ public class MessageRestAPI extends SecuredServelet {
 
     private boolean isCollectionPath(String pathInfo) {
         return pathInfo == null || "/".equals(pathInfo);
+    }
+
+    private boolean canAccessMessage(int idUtilisateur, Message message) {
+        if (message == null) {
+            return false;
+        }
+
+        Canal canal = canalDAO.findById(message.getIdCanal());
+
+        return isPublicCanal(canal)
+                || membreCanalDAO.isMembre(idUtilisateur, message.getIdCanal());
+    }
+
+    private boolean isPublicCanal(Canal canal) {
+        return canal != null && "public".equalsIgnoreCase(canal.getTypeCanal());
     }
 }

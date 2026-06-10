@@ -42,27 +42,28 @@ public class CanalRestAPI extends SecuredServelet {
             return;
         }
 
+        int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
-            handleGetCanaux(res);
+            handleGetCanaux(idUtilisateurConnecte, res);
             return;
         }
 
         String[] parts = pathInfo.split("/");
 
         if (parts.length == 2) {
-            handleGetCanal(parts[1], res);
+            handleGetCanal(parts[1], idUtilisateurConnecte, res);
             return;
         }
 
         if (parts.length == 3 && "messages".equals(parts[2])) {
-            handleGetCanalMessages(parts[1], res);
+            handleGetCanalMessages(parts[1], idUtilisateurConnecte, res);
             return;
         }
 
         if (parts.length == 3 && "membres".equals(parts[2])) {
-            handleGetCanalMembres(parts[1], res);
+            handleGetCanalMembres(parts[1], idUtilisateurConnecte, res);
             return;
         }
 
@@ -77,22 +78,23 @@ public class CanalRestAPI extends SecuredServelet {
             return;
         }
 
+        int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
-            handleCreateCanal(req, res);
+            handleCreateCanal(idUtilisateurConnecte, req, res);
             return;
         }
 
         String[] parts = pathInfo.split("/");
 
         if (parts.length == 3 && "messages".equals(parts[2])) {
-            handleCreateMessageInCanal(parts[1], req, res);
+            handleCreateMessageInCanal(parts[1], idUtilisateurConnecte, req, res);
             return;
         }
 
         if (parts.length == 3 && "membres".equals(parts[2])) {
-            handleAddMembreToCanal(parts[1], req, res);
+            handleAddMembreToCanal(parts[1], idUtilisateurConnecte, req, res);
             return;
         }
 
@@ -107,6 +109,7 @@ public class CanalRestAPI extends SecuredServelet {
             return;
         }
 
+        int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -118,7 +121,7 @@ public class CanalRestAPI extends SecuredServelet {
         String[] parts = pathInfo.split("/");
 
         if (parts.length == 2) {
-            handleUpdateCanal(parts[1], req, res);
+            handleUpdateCanal(parts[1], idUtilisateurConnecte, req, res);
             return;
         }
 
@@ -139,6 +142,7 @@ public class CanalRestAPI extends SecuredServelet {
             return;
         }
 
+        int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -162,7 +166,7 @@ public class CanalRestAPI extends SecuredServelet {
         }
 
         if (parts.length == 4 && "messages".equals(parts[2])) {
-            handleDeleteMessageFromCanal(parts[1], parts[3], res);
+            handleDeleteMessageFromCanal(parts[1], parts[3], idUtilisateurConnecte, res);
             return;
         }
 
@@ -173,7 +177,7 @@ public class CanalRestAPI extends SecuredServelet {
         }
 
         if (parts.length == 4 && "membres".equals(parts[2])) {
-            handleRemoveMembreFromCanal(parts[1], parts[3], res);
+            handleRemoveMembreFromCanal(parts[1], parts[3], idUtilisateurConnecte, res);
             return;
         }
 
@@ -181,94 +185,15 @@ public class CanalRestAPI extends SecuredServelet {
                 new APIMessage("URI invalide pour la suppression"));
     }
 
-    private void handleGetCanaux(HttpServletResponse res) throws IOException {
-        List<Canal> canaux = canalDAO.findAll();
+    private void handleGetCanaux(int idUtilisateurConnecte, HttpServletResponse res)
+            throws IOException {
+        List<Canal> canaux = canalDAO.findAll().stream()
+                .filter(canal -> canAccessCanal(idUtilisateurConnecte, canal))
+                .collect(Collectors.toList());
         writeJsonResponse(res, HttpServletResponse.SC_OK, canaux);
     }
 
-    private void handleGetCanal(String idCanalPart, HttpServletResponse res)
-            throws IOException {
-        try {
-            int idCanal = Integer.parseInt(idCanalPart);
-            Canal canal = canalDAO.findById(idCanal);
-
-            if (canal == null) {
-                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new APIMessage("Canal introuvable"));
-                return;
-            }
-
-            writeJsonResponse(res, HttpServletResponse.SC_OK, canal);
-        } catch (NumberFormatException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Identifiant de canal invalide"));
-        }
-    }
-
-    private void handleGetCanalMessages(String idCanalPart, HttpServletResponse res)
-            throws IOException {
-        try {
-            int idCanal = Integer.parseInt(idCanalPart);
-            Canal canal = canalDAO.findById(idCanal);
-
-            if (canal == null) {
-                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new APIMessage("Canal introuvable"));
-                return;
-            }
-
-            List<Message> messages = messageDAO.findByCanal(idCanal);
-            writeJsonResponse(res, HttpServletResponse.SC_OK, messages);
-        } catch (NumberFormatException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Identifiant de canal invalide"));
-        }
-    }
-
-    private void handleGetCanalMembres(String idCanalPart, HttpServletResponse res)
-            throws IOException {
-        try {
-            int idCanal = Integer.parseInt(idCanalPart);
-            Canal canal = canalDAO.findById(idCanal);
-
-            if (canal == null) {
-                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new APIMessage("Canal introuvable"));
-                return;
-            }
-
-            List<Utilisateur> membres = membreCanalDAO.findByCanal(idCanal);
-            writeJsonResponse(res, HttpServletResponse.SC_OK, toPublicList(membres));
-        } catch (NumberFormatException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Identifiant de canal invalide"));
-        }
-    }
-
-    private void handleCreateCanal(HttpServletRequest req, HttpServletResponse res)
-            throws IOException {
-        try {
-            Canal canal = objectMapper.readValue(req.getReader(), Canal.class);
-            boolean created = canalDAO.save(canal);
-
-            if (!created) {
-                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                        new APIMessage("Creation du canal impossible"));
-                return;
-            }
-
-            if (isPublicCanal(canal)) {
-                addAllUtilisateursToCanal(canal.getIdCanal());
-            }
-
-            writeJsonResponse(res, HttpServletResponse.SC_CREATED, canal);
-        } catch (Exception e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("JSON invalide"));
-        }
-    }
-
-    private void handleCreateMessageInCanal(String idCanalPart, HttpServletRequest req,
+    private void handleGetCanal(String idCanalPart, int idUtilisateurConnecte,
             HttpServletResponse res) throws IOException {
         try {
             int idCanal = Integer.parseInt(idCanalPart);
@@ -280,8 +205,114 @@ public class CanalRestAPI extends SecuredServelet {
                 return;
             }
 
+            if (!canAccessCanal(idUtilisateurConnecte, canal)) {
+                writeForbidden(res);
+                return;
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_OK, canal);
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de canal invalide"));
+        }
+    }
+
+    private void handleGetCanalMessages(String idCanalPart, int idUtilisateurConnecte,
+            HttpServletResponse res) throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            if (!canAccessCanal(idUtilisateurConnecte, canal)) {
+                writeForbidden(res);
+                return;
+            }
+
+            List<Message> messages = messageDAO.findByCanal(idCanal);
+            writeJsonResponse(res, HttpServletResponse.SC_OK, messages);
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de canal invalide"));
+        }
+    }
+
+    private void handleGetCanalMembres(String idCanalPart, int idUtilisateurConnecte,
+            HttpServletResponse res) throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            if (!canAccessCanal(idUtilisateurConnecte, canal)) {
+                writeForbidden(res);
+                return;
+            }
+
+            List<Utilisateur> membres = membreCanalDAO.findByCanal(idCanal);
+            writeJsonResponse(res, HttpServletResponse.SC_OK, toPublicList(membres));
+        } catch (NumberFormatException e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("Identifiant de canal invalide"));
+        }
+    }
+
+    private void handleCreateCanal(int idUtilisateurConnecte, HttpServletRequest req,
+            HttpServletResponse res) throws IOException {
+        try {
+            Canal canal = objectMapper.readValue(req.getReader(), Canal.class);
+            canal.setIdAdmin(idUtilisateurConnecte);
+            boolean created = canalDAO.save(canal);
+
+            if (!created) {
+                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
+                        new APIMessage("Creation du canal impossible"));
+                return;
+            }
+
+            if (isPublicCanal(canal)) {
+                addAllUtilisateursToCanal(canal.getIdCanal());
+            } else {
+                membreCanalDAO.addMembre(idUtilisateurConnecte, canal.getIdCanal());
+            }
+
+            writeJsonResponse(res, HttpServletResponse.SC_CREATED, canal);
+        } catch (Exception e) {
+            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
+                    new APIMessage("JSON invalide"));
+        }
+    }
+
+    private void handleCreateMessageInCanal(String idCanalPart, int idUtilisateurConnecte,
+            HttpServletRequest req, HttpServletResponse res) throws IOException {
+        try {
+            int idCanal = Integer.parseInt(idCanalPart);
+            Canal canal = canalDAO.findById(idCanal);
+
+            if (canal == null) {
+                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
+                        new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            if (!membreCanalDAO.isMembre(idUtilisateurConnecte, idCanal)) {
+                writeForbidden(res);
+                return;
+            }
+
             Message message = objectMapper.readValue(req.getReader(), Message.class);
             message.setIdCanal(idCanal);
+            message.setIdUtilisateur(idUtilisateurConnecte);
 
             boolean created = messageDAO.save(message);
 
@@ -301,8 +332,8 @@ public class CanalRestAPI extends SecuredServelet {
         }
     }
 
-    private void handleAddMembreToCanal(String idCanalPart, HttpServletRequest req,
-            HttpServletResponse res) throws IOException {
+    private void handleAddMembreToCanal(String idCanalPart, int idUtilisateurConnecte,
+            HttpServletRequest req, HttpServletResponse res) throws IOException {
         try {
             int idCanal = Integer.parseInt(idCanalPart);
             Canal canal = canalDAO.findById(idCanal);
@@ -310,6 +341,11 @@ public class CanalRestAPI extends SecuredServelet {
             if (canal == null) {
                 writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
                         new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            if (!isCanalAdmin(idUtilisateurConnecte, canal)) {
+                writeForbidden(res);
                 return;
             }
 
@@ -333,8 +369,8 @@ public class CanalRestAPI extends SecuredServelet {
         }
     }
 
-    private void handleUpdateCanal(String idCanalPart, HttpServletRequest req,
-            HttpServletResponse res) throws IOException {
+    private void handleUpdateCanal(String idCanalPart, int idUtilisateurConnecte,
+            HttpServletRequest req, HttpServletResponse res) throws IOException {
         try {
             int idCanal = Integer.parseInt(idCanalPart);
             Canal existingCanal = canalDAO.findById(idCanal);
@@ -345,8 +381,14 @@ public class CanalRestAPI extends SecuredServelet {
                 return;
             }
 
+            if (!isCanalAdmin(idUtilisateurConnecte, existingCanal)) {
+                writeForbidden(res);
+                return;
+            }
+
             Canal updatedCanal = objectMapper.readValue(req.getReader(), Canal.class);
             updatedCanal.setIdCanal(idCanal);
+            updatedCanal.setIdAdmin(existingCanal.getIdAdmin());
 
             boolean updated = canalDAO.update(updatedCanal);
 
@@ -367,7 +409,7 @@ public class CanalRestAPI extends SecuredServelet {
     }
 
     private void handleDeleteMessageFromCanal(String idCanalPart, String idMessagePart,
-            HttpServletResponse res) throws IOException {
+            int idUtilisateurConnecte, HttpServletResponse res) throws IOException {
         try {
             int idCanal = Integer.parseInt(idCanalPart);
             int idMessage = Integer.parseInt(idMessagePart);
@@ -388,6 +430,12 @@ public class CanalRestAPI extends SecuredServelet {
                 return;
             }
 
+            if (!isMessageAuthor(idUtilisateurConnecte, message)
+                    && !isCanalAdmin(idUtilisateurConnecte, canal)) {
+                writeForbidden(res);
+                return;
+            }
+
             boolean deleted = messageDAO.delete(idMessage);
 
             if (!deleted) {
@@ -405,7 +453,7 @@ public class CanalRestAPI extends SecuredServelet {
     }
 
     private void handleRemoveMembreFromCanal(String idCanalPart, String idUtilisateurPart,
-            HttpServletResponse res) throws IOException {
+            int idUtilisateurConnecte, HttpServletResponse res) throws IOException {
         try {
             int idCanal = Integer.parseInt(idCanalPart);
             int idUtilisateur = Integer.parseInt(idUtilisateurPart);
@@ -415,6 +463,12 @@ public class CanalRestAPI extends SecuredServelet {
             if (canal == null) {
                 writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
                         new APIMessage("Canal introuvable"));
+                return;
+            }
+
+            if (!isCanalAdmin(idUtilisateurConnecte, canal)
+                    && idUtilisateurConnecte != idUtilisateur) {
+                writeForbidden(res);
                 return;
             }
 
@@ -450,6 +504,19 @@ public class CanalRestAPI extends SecuredServelet {
 
     private boolean isPublicCanal(Canal canal) {
         return canal != null && "public".equalsIgnoreCase(canal.getTypeCanal());
+    }
+
+    private boolean canAccessCanal(int idUtilisateur, Canal canal) {
+        return isPublicCanal(canal)
+                || membreCanalDAO.isMembre(idUtilisateur, canal.getIdCanal());
+    }
+
+    private boolean isCanalAdmin(int idUtilisateur, Canal canal) {
+        return canal != null && canal.getIdAdmin() == idUtilisateur;
+    }
+
+    private boolean isMessageAuthor(int idUtilisateur, Message message) {
+        return message != null && message.getIdUtilisateur() == idUtilisateur;
     }
 
     private boolean isCollectionPath(String pathInfo) {
