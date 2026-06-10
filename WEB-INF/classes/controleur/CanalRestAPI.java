@@ -139,46 +139,8 @@ public class CanalRestAPI extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-        String pathInfo = req.getPathInfo();
-
-        if (isCollectionPath(pathInfo)) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide pour la suppression d'un canal"));
-            return;
-        }
-
-        String[] parts = pathInfo.split("/");
-
-        if (parts.length != 2) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("URI invalide pour la suppression d'un canal"));
-            return;
-        }
-
-        try {
-            int idCanal = Integer.parseInt(parts[1]);
-            Canal existingCanal = canalDAO.findById(idCanal);
-
-            if (existingCanal == null) {
-                writeJsonResponse(res, HttpServletResponse.SC_NOT_FOUND,
-                        new APIMessage("Canal introuvable"));
-                return;
-            }
-
-            boolean deleted = canalDAO.delete(idCanal);
-
-            if (!deleted) {
-                writeJsonResponse(res, HttpServletResponse.SC_CONFLICT,
-                        new APIMessage("Suppression du canal impossible"));
-                return;
-            }
-
-            writeJsonResponse(res, HttpServletResponse.SC_OK,
-                    new APIMessage("Canal supprime"));
-        } catch (NumberFormatException e) {
-            writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
-                    new APIMessage("Identifiant de canal invalide"));
-        }
+        writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                new APIMessage("La suppression de canal n'est pas autorisee"));
     }
 
     private void handleGetCanal(String idCanalPart, HttpServletResponse res)

@@ -133,6 +133,13 @@ public class UtilisateurRestAPI extends HttpServlet {
         }
     }
 
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse res)
+            throws IOException {
+        writeJsonResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                new APIMessage("La suppression de l'utilisateur n'est pas autorisee"));
+    }
+
     private void handleGetUtilisateur(String idStr, HttpServletResponse res)
             throws IOException {
         try {
