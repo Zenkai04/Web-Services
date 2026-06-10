@@ -1,13 +1,14 @@
 package controleur;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dao.DAOFactory;
-import dao.UtilisateurDAO;
 import dao.CanalDAO;
+import dao.DAOFactory;
+import dao.MembreCanalDAO;
+import dao.UtilisateurDAO;
 import dto.APIMessage;
+import dto.Canal;
 import dto.Utilisateur;
 import dto.UtilisateurPublic;
-import dto.Canal;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,7 @@ public class UtilisateurRestAPI extends HttpServlet {
 
     private final UtilisateurDAO utilisateurDAO = DAOFactory.getInstance().getUtilisateurDAO();
     private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
+    private final MembreCanalDAO membreCanalDAO = DAOFactory.getInstance().getMembreCanalDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
@@ -140,6 +142,8 @@ public class UtilisateurRestAPI extends HttpServlet {
                 return;
             }
 
+            addUtilisateurToPublicCanaux(utilisateur.getIdUtilisateur());
+
             writeJsonResponse(res, HttpServletResponse.SC_CREATED, toPublic(utilisateur));
         } catch (Exception e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
@@ -210,6 +214,20 @@ public class UtilisateurRestAPI extends HttpServlet {
         return utilisateurs.stream()
                 .map(this::toPublic)
                 .collect(Collectors.toList());
+    }
+
+    private void addUtilisateurToPublicCanaux(int idUtilisateur) {
+        List<Canal> canaux = canalDAO.findAll();
+
+        for (Canal canal : canaux) {
+            if (isPublicCanal(canal)) {
+                membreCanalDAO.addMembre(idUtilisateur, canal.getIdCanal());
+            }
+        }
+    }
+
+    private boolean isPublicCanal(Canal canal) {
+        return canal != null && "public".equalsIgnoreCase(canal.getTypeCanal());
     }
 
     private boolean isCollectionPath(String pathInfo) {

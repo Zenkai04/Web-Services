@@ -5,6 +5,7 @@ import dao.CanalDAO;
 import dao.DAOFactory;
 import dao.MembreCanalDAO;
 import dao.MessageDAO;
+import dao.UtilisateurDAO;
 import dto.APIMessage;
 import dto.Canal;
 import dto.Message;
@@ -25,6 +26,7 @@ public class CanalRestAPI extends HttpServlet {
     private final CanalDAO canalDAO = DAOFactory.getInstance().getCanalDAO();
     private final MessageDAO messageDAO = DAOFactory.getInstance().getMessageDAO();
     private final MembreCanalDAO membreCanalDAO = DAOFactory.getInstance().getMembreCanalDAO();
+    private final UtilisateurDAO utilisateurDAO = DAOFactory.getInstance().getUtilisateurDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
@@ -240,6 +242,10 @@ public class CanalRestAPI extends HttpServlet {
                 return;
             }
 
+            if (isPublicCanal(canal)) {
+                addAllUtilisateursToCanal(canal.getIdCanal());
+            }
+
             writeJsonResponse(res, HttpServletResponse.SC_CREATED, canal);
         } catch (Exception e) {
             writeJsonResponse(res, HttpServletResponse.SC_BAD_REQUEST,
@@ -417,6 +423,18 @@ public class CanalRestAPI extends HttpServlet {
         return utilisateurs.stream()
                 .map(UtilisateurPublic::new)
                 .collect(Collectors.toList());
+    }
+
+    private void addAllUtilisateursToCanal(int idCanal) {
+        List<Utilisateur> utilisateurs = utilisateurDAO.findAll();
+
+        for (Utilisateur utilisateur : utilisateurs) {
+            membreCanalDAO.addMembre(utilisateur.getIdUtilisateur(), idCanal);
+        }
+    }
+
+    private boolean isPublicCanal(Canal canal) {
+        return canal != null && "public".equalsIgnoreCase(canal.getTypeCanal());
     }
 
     private boolean isCollectionPath(String pathInfo) {
