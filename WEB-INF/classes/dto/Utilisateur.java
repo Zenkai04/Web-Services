@@ -2,6 +2,14 @@ package dto;
 
 import java.sql.Timestamp;
 
+/**
+ * DTO UTILISATEUR - Representation complete d'un compte utilisateur.
+ *
+ * Attention :
+ * - Ce DTO contient le hash du mot de passe.
+ * - Il est utilise cote DAO et authentification.
+ * - Les reponses publiques doivent utiliser UtilisateurPublic.
+ */
 public class Utilisateur {
     private int idUtilisateur;
     private String pseudo;
@@ -9,6 +17,9 @@ public class Utilisateur {
     private String motDePasseHash;
     private Timestamp dateCreation;
 
+    /**
+     * Constructeur complet utile pour creer un utilisateur deja initialise.
+     */
     public Utilisateur(int idUtilisateur, String pseudo, String email,
             String motDePasseHash, Timestamp dateCreation) {
         this.idUtilisateur = idUtilisateur;
@@ -18,6 +29,9 @@ public class Utilisateur {
         this.dateCreation = dateCreation;
     }
 
+    /**
+     * Constructeur vide requis par Gson et par les mappers JDBC.
+     */
     public Utilisateur() {
     }
 

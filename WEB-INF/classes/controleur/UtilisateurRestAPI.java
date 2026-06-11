@@ -18,6 +18,20 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * CONTROLEUR REST - UTILISATEURS
+ *
+ * Responsabilites :
+ * - Exposer les routes REST liees aux utilisateurs.
+ * - Permettre l'inscription publique via POST /utilisateurs.
+ * - Retourner uniquement des UtilisateurPublic pour ne jamais exposer les hashes.
+ * - Ajouter automatiquement un nouvel utilisateur aux canaux publics.
+ *
+ * Securite :
+ * - GET, PUT et DELETE exigent un JWT valide via SecuredServelet.
+ * - POST /utilisateurs reste public pour permettre l'inscription.
+ * - Un utilisateur ne peut modifier que son propre compte.
+ */
 @WebServlet("/utilisateurs/*")
 public class UtilisateurRestAPI extends SecuredServelet {
 
@@ -26,6 +40,9 @@ public class UtilisateurRestAPI extends SecuredServelet {
     private final MembreCanalDAO membreCanalDAO = DAOFactory.getInstance().getMembreCanalDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Reponse JSON commune a tous les endpoints de cette API.
+     */
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
             throws IOException {
         res.setStatus(status);
@@ -36,6 +53,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Toutes les lectures utilisateur necessitent un token valide.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -43,6 +61,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
         int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
+        // GET /utilisateurs
         if (isCollectionPath(pathInfo)) {
             handleGetUtilisateurs(res);
             return;
@@ -50,11 +69,13 @@ public class UtilisateurRestAPI extends SecuredServelet {
 
         String[] parts = pathInfo.split("/");
 
+        // GET /utilisateurs/{id}
         if (parts.length == 2) {
             handleGetUtilisateur(parts[1], res);
             return;
         }
 
+        // GET /utilisateurs/{id}/canaux
         if (parts.length == 3 && "canaux".equals(parts[2])) {
             handleGetCanalByUtilisateur(parts[1], idUtilisateurConnecte, res);
             return;
@@ -67,6 +88,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // POST /utilisateurs reste public : c'est la route d'inscription.
         String pathInfo = req.getPathInfo();
 
         if (isCollectionPath(pathInfo)) {
@@ -81,6 +103,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Modification protegee : l'utilisateur connecte doit correspondre a l'id URL.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -108,6 +131,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // La suppression de compte n'est pas proposee dans cette version de l'API.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -143,6 +167,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
     private void handleCreateUtilisateur(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
         try {
+            // Le corps JSON est lu dans le DTO interne, puis le mot de passe est hashe.
             Utilisateur utilisateur = objectMapper.readValue(req.getInputStream(), Utilisateur.class);
             utilisateur.setMotDePasseHash(
                     PasswordUtils.hashPassword(utilisateur.getMotDePasseHash()));
@@ -155,6 +180,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
                 return;
             }
 
+            // Tout nouvel inscrit rejoint automatiquement les canaux publics existants.
             addUtilisateurToPublicCanaux(utilisateur.getIdUtilisateur());
 
             writeJsonResponse(res, HttpServletResponse.SC_CREATED, toPublic(utilisateur));
@@ -169,6 +195,7 @@ public class UtilisateurRestAPI extends SecuredServelet {
         try {
             int idUtilisateur = Integer.parseInt(idUtilisateurPart);
 
+            // Un utilisateur ne peut pas modifier le profil d'un autre utilisateur.
             if (idUtilisateurConnecte != idUtilisateur) {
                 writeForbidden(res);
                 return;

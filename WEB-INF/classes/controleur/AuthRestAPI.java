@@ -17,6 +17,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import utils.JwtManager;
 import utils.PasswordUtils;
 
+/**
+ * CONTROLEUR REST - AUTHENTIFICATION
+ *
+ * Responsabilites :
+ * - Exposer l'endpoint public POST /auth/login.
+ * - Verifier le pseudo et le mot de passe recus en JSON.
+ * - Generer un JWT signe lorsque les identifiants sont valides.
+ * - Retourner une reponse d'authentification sans exposer le hash du mot de passe.
+ *
+ * Securite :
+ * - Cette servlet reste volontairement publique, car elle sert a obtenir un token.
+ * - La comparaison des mots de passe passe par PasswordUtils.
+ * - Les autres methodes HTTP sont refusees explicitement.
+ */
 @WebServlet("/auth/*")
 public class AuthRestAPI extends HttpServlet {
 
@@ -26,6 +40,9 @@ public class AuthRestAPI extends HttpServlet {
     private final ObjectMapper objectMapper =
             new ObjectMapper();
 
+    /**
+     * Ecrit une reponse JSON uniforme pour toutes les routes de cette servlet.
+     */
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
             throws IOException {
         res.setStatus(status);
@@ -43,6 +60,7 @@ public class AuthRestAPI extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // POST /auth/login : seule route de creation de token exposee par l'API.
         String pathInfo = req.getPathInfo();
         if ("/login".equals(pathInfo)) {
             handleLogin(req, res);
@@ -69,6 +87,7 @@ public class AuthRestAPI extends HttpServlet {
     private void handleLogin(HttpServletRequest req, HttpServletResponse res)
         throws IOException {
         try {
+            // Deserialisation du corps JSON : { "pseudo": "...", "motDePasse": "..." }
             LoginRequest loginRequest = objectMapper.readValue(
                     req.getInputStream(),
                     LoginRequest.class
@@ -77,6 +96,7 @@ public class AuthRestAPI extends HttpServlet {
             Utilisateur utilisateur =
                     utilisateurDAO.findByPseudo(loginRequest.getPseudo());
 
+            // Refus si le pseudo est inconnu ou si le hash du mot de passe ne correspond pas.
             if (utilisateur == null ||
                     !PasswordUtils.verifyPassword(
                             loginRequest.getMotDePasse(),
@@ -88,6 +108,7 @@ public class AuthRestAPI extends HttpServlet {
                 return;
             }
 
+            // Generation du JWT contenant l'id utilisateur en subject et le pseudo en claim.
             String token = JwtManager.generateToken(utilisateur);
 
             AuthResponse authResponse = new AuthResponse(

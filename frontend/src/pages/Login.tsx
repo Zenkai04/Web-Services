@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { loginAPI, type Utilisateur } from '../services/authService';
 
+/**
+ * PAGE LOGIN - Formulaire de connexion.
+ *
+ * Responsabilites :
+ * - Collecter le pseudo et le mot de passe.
+ * - Appeler le service d'authentification.
+ * - Remonter la session au composant racine en cas de succes.
+ */
 interface LoginProps {
     onLoginSuccess: (user: Utilisateur) => void;
     onNavigateToRegister: () => void;
@@ -12,6 +20,9 @@ export default function Login({ onLoginSuccess, onNavigateToRegister }: LoginPro
     const [erreur, setErreur] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
+    /**
+     * Valide le formulaire puis tente la connexion via l'API backend.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErreur(null);

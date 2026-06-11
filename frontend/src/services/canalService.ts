@@ -1,5 +1,17 @@
 // src/services/canalService.ts
+/**
+ * SERVICE CANAUX - Appels HTTP vers les endpoints /canaux.
+ *
+ * Responsabilites :
+ * - Charger les canaux visibles par l'utilisateur connecte.
+ * - Charger les canaux d'un utilisateur donne.
+ * - Creer un canal public ou prive.
+ * - Fournir le token JWT aux endpoints securises.
+ */
 
+/**
+ * Representation frontend d'un canal renvoye par l'API Java.
+ */
 export interface Canal {
     idCanal: number;
     idAdmin: number;

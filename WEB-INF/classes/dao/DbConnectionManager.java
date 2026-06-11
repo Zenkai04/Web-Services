@@ -11,6 +11,14 @@ import java.sql.SQLException;
 import java.net.URISyntaxException;
 import java.util.Properties;
 
+/**
+ * GESTIONNAIRE DE CONNEXION - Configuration JDBC de l'application.
+ *
+ * Responsabilites :
+ * - Charger le driver PostgreSQL.
+ * - Lire les informations de connexion depuis db.properties.
+ * - Fournir une connexion JDBC neuve aux DAO.
+ */
 public class DbConnectionManager {
     private static DbConnectionManager instance;
 
@@ -18,6 +26,9 @@ public class DbConnectionManager {
     private final String user;
     private final String password;
 
+    /**
+     * Initialise les parametres de connexion au demarrage de la premiere DAO.
+     */
     private DbConnectionManager() {
         try {
             Properties props = loadProperties();
@@ -31,6 +42,9 @@ public class DbConnectionManager {
         }
     }
 
+    /**
+     * Retourne l'instance unique du gestionnaire de connexion.
+     */
     public static synchronized DbConnectionManager getInstance() {
         if (instance == null) {
             instance = new DbConnectionManager();
@@ -38,10 +52,16 @@ public class DbConnectionManager {
         return instance;
     }
 
+    /**
+     * Ouvre une connexion JDBC vers la base configuree.
+     */
     public Connection getConnection() throws SQLException {
         return DriverManager.getConnection(url, user, password);
     }
 
+    /**
+     * Charge db.properties depuis le classpath ou depuis les emplacements fichiers prevus.
+     */
     private Properties loadProperties() throws IOException {
         Properties props = new Properties();
 
@@ -64,6 +84,9 @@ public class DbConnectionManager {
         throw new IllegalStateException("Fichier db.properties introuvable");
     }
 
+    /**
+     * Liste les emplacements possibles du fichier de configuration.
+     */
     private Path[] getFileCandidates() {
         Path classesDir = getClassesDir();
 
@@ -74,6 +97,9 @@ public class DbConnectionManager {
         };
     }
 
+    /**
+     * Retrouve le dossier contenant les classes compilees de l'application.
+     */
     private Path getClassesDir() {
         try {
             return Paths.get(getClass()
@@ -86,6 +112,9 @@ public class DbConnectionManager {
         }
     }
 
+    /**
+     * Lit une propriete obligatoire et retire les guillemets eventuels.
+     */
     private String getRequiredProperty(Properties props, String key) {
         String value = props.getProperty(key);
 

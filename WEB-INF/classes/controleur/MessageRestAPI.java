@@ -15,6 +15,19 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * CONTROLEUR REST - MESSAGES
+ *
+ * Responsabilites :
+ * - Exposer les routes directes de consultation et modification des messages.
+ * - Refuser la creation et la suppression directes, qui doivent passer par /canaux.
+ * - Appliquer les droits d'acces au canal parent du message.
+ *
+ * Securite :
+ * - Toutes les routes exigent un JWT valide.
+ * - Un message est lisible seulement si son canal est public ou accessible a l'utilisateur.
+ * - La modification est reservee a l'auteur du message.
+ */
 @WebServlet("/messages/*")
 public class MessageRestAPI extends SecuredServelet {
 
@@ -23,6 +36,9 @@ public class MessageRestAPI extends SecuredServelet {
     private final MembreCanalDAO membreCanalDAO = DAOFactory.getInstance().getMembreCanalDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Ecrit une reponse JSON standard.
+     */
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
             throws IOException {
         res.setStatus(status);
@@ -33,6 +49,7 @@ public class MessageRestAPI extends SecuredServelet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Consultation des messages protegee par token.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -40,6 +57,7 @@ public class MessageRestAPI extends SecuredServelet {
         int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
+        // GET /messages
         if (isCollectionPath(pathInfo)) {
             handleGetMessages(idUtilisateurConnecte, res);
             return;
@@ -47,6 +65,7 @@ public class MessageRestAPI extends SecuredServelet {
 
         String[] parts = pathInfo.split("/");
 
+        // GET /messages/{id}
         if (parts.length == 2) {
             handleGetMessage(parts[1], idUtilisateurConnecte, res);
             return;
@@ -59,6 +78,7 @@ public class MessageRestAPI extends SecuredServelet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Un message doit etre cree dans le contexte de son canal parent.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -70,6 +90,7 @@ public class MessageRestAPI extends SecuredServelet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Seul l'auteur du message pourra passer le controle dans le handler.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -97,6 +118,7 @@ public class MessageRestAPI extends SecuredServelet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // La suppression directe est refusee pour respecter le modele REST retenu.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -107,6 +129,7 @@ public class MessageRestAPI extends SecuredServelet {
 
     private void handleGetMessages(int idUtilisateurConnecte, HttpServletResponse res)
             throws IOException {
+        // Filtre les messages selon les canaux auxquels l'utilisateur a acces.
         List<Message> messages = messageDAO.findAll().stream()
                 .filter(message -> canAccessMessage(idUtilisateurConnecte, message))
                 .toList();
@@ -125,6 +148,7 @@ public class MessageRestAPI extends SecuredServelet {
                 return;
             }
 
+            // Le message est masque si son canal parent n'est pas accessible.
             if (!canAccessMessage(idUtilisateurConnecte, message)) {
                 writeForbidden(res);
                 return;
@@ -150,6 +174,7 @@ public class MessageRestAPI extends SecuredServelet {
                 return;
             }
 
+            // Un message ne peut etre modifie que par son auteur.
             if (existingMessage.getIdUtilisateur() != idUtilisateurConnecte) {
                 writeForbidden(res);
                 return;
@@ -185,6 +210,7 @@ public class MessageRestAPI extends SecuredServelet {
             return false;
         }
 
+        // Les droits de lecture dependent du canal auquel appartient le message.
         Canal canal = canalDAO.findById(message.getIdCanal());
 
         return isPublicCanal(canal)

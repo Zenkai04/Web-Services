@@ -1,4 +1,13 @@
 // src/App.tsx
+/**
+ * COMPOSANT RACINE - Gestion de la session frontend.
+ *
+ * Responsabilites :
+ * - Restaurer la session depuis localStorage au chargement.
+ * - Enregistrer le profil et le token apres connexion ou inscription.
+ * - Invalider localement la session lors de la deconnexion.
+ * - Choisir entre les ecrans Login, Register et Dashboard.
+ */
 import { useState } from 'react';
 import Login from './pages/Login';
 import Register from './pages/Register';

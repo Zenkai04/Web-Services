@@ -2,6 +2,13 @@ package dto;
 
 import java.sql.Timestamp;
 
+/**
+ * DTO MESSAGE - Representation Java d'un message de canal.
+ *
+ * Chaque message est obligatoirement rattache a un utilisateur auteur
+ * et a un canal. Les controleurs appliquent les regles d'acces avant
+ * d'exposer ou de modifier ces donnees.
+ */
 public class Message {
     private int idMessage;
     private int idUtilisateur;
@@ -10,6 +17,9 @@ public class Message {
     private Timestamp dateCreation;
     private Timestamp dateModification;
 
+    /**
+     * Constructeur complet utile pour creer un message deja initialise.
+     */
     public Message(int idMessage, int idUtilisateur, int idCanal, String contenu,
             Timestamp dateCreation, Timestamp dateModification) {
         this.idMessage = idMessage;
@@ -20,6 +30,9 @@ public class Message {
         this.dateModification = dateModification;
     }
 
+    /**
+     * Constructeur vide requis par Gson et par les mappers JDBC.
+     */
     public Message() {
     }
 

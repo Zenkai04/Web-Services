@@ -2,6 +2,12 @@ package dto;
 
 import java.sql.Timestamp;
 
+/**
+ * DTO CANAL - Representation Java d'un canal de discussion.
+ *
+ * Ce DTO transporte les informations de la table canal entre les DAO,
+ * les controleurs REST et la serialisation JSON.
+ */
 public class Canal {
     private int idCanal;
     private int idAdmin;
@@ -11,9 +17,15 @@ public class Canal {
     private String slug;
     private Timestamp dateCreation;
 
+    /**
+     * Constructeur vide requis par Gson et par les mappers JDBC.
+     */
     public Canal() {
     }
 
+    /**
+     * Constructeur complet utile pour creer un objet canal deja initialise.
+     */
     public Canal(int idCanal, int idAdmin, String nom, String description,
             String typeCanal, String slug, Timestamp dateCreation) {
         this.idCanal = idCanal;

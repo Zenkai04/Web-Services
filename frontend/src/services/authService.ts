@@ -1,5 +1,21 @@
 // src/services/authService.ts
+/**
+ * SERVICE AUTHENTIFICATION - Appels HTTP lies aux comptes utilisateurs.
+ *
+ * Responsabilites :
+ * - Connecter un utilisateur via /auth/login.
+ * - Inscrire un nouvel utilisateur via /utilisateurs.
+ * - Recuperer les utilisateurs publics lorsque le backend l'autorise.
+ * - Remonter les erreurs lisibles aux pages React.
+ */
 
+/**
+ * Representation frontend d'un utilisateur.
+ *
+ * Le token est ajoute apres connexion pour les requetes securisees.
+ * Le hash reste optionnel par compatibilite, mais les reponses backend
+ * doivent maintenant utiliser le profil public.
+ */
 export interface Utilisateur {
     idUtilisateur: number;
     pseudo: string;

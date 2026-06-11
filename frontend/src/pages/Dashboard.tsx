@@ -10,6 +10,15 @@ import {
 } from '../services/messageService';
 import { fetchUtilisateursAPI, type Utilisateur } from '../services/authService';
 
+/**
+ * PAGE DASHBOARD - Interface principale apres authentification.
+ *
+ * Responsabilites :
+ * - Charger les canaux accessibles a l'utilisateur connecte.
+ * - Afficher et rafraichir les messages du canal selectionne.
+ * - Creer des canaux et envoyer/modifier/supprimer des messages.
+ * - Centraliser la reaction frontend aux tokens invalides ou expires.
+ */
 interface DashboardProps {
     user: Utilisateur & { token: string };
     onLogout: () => void;
@@ -54,6 +63,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         }
     };
 
+    /**
+     * Charge les messages du canal courant puis les trie chronologiquement.
+     */
     const chargerMessages = async () => {
         if (!selectedCanal) return;
         setLoadingMessages(true);
@@ -96,6 +108,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         chargerMessages();
     }, [selectedCanal]);
 
+    /**
+     * Ajoute ou retire un utilisateur de la selection pour un canal prive.
+     */
     const handleToggleMembre = (idUtilisateur: number) => {
         setMembresSelectionnes((prev) =>
             prev.includes(idUtilisateur)
@@ -104,6 +119,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         );
     };
 
+    /**
+     * Envoie un message dans le canal selectionne.
+     */
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedCanal || nouveauContenu.trim() === '') return;
@@ -115,6 +133,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         });
     };
 
+    /**
+     * Modifie un message lorsque l'utilisateur courant en est l'auteur.
+     */
     const handleEditMessage = async (idMessage: number, contenuActuel: string) => {
         const nouveauTexte = prompt("Modifiez votre message :", contenuActuel);
         if (nouveauTexte === null || nouveauTexte.trim() === '' || nouveauTexte === contenuActuel) return;
@@ -125,6 +146,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         });
     };
 
+    /**
+     * Supprime un message dans le contexte de son canal.
+     */
     const handleDeleteMessage = async (idMessage: number) => {
         if (!selectedCanal) return;
         if (!confirm("Voulez-vous vraiment supprimer ce message ?")) return;
@@ -135,6 +159,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         });
     };
 
+    /**
+     * Cree un canal, puis ajoute les membres selectionnes si le canal est prive.
+     */
     const handleCreateCanal = async (e: React.FormEvent) => {
         e.preventDefault();
         if (nomNouveauCanal === '' || descNouveauCanal === '') return;

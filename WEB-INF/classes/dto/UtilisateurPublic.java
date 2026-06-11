@@ -2,6 +2,13 @@ package dto;
 
 import java.sql.Timestamp;
 
+/**
+ * DTO UTILISATEUR PUBLIC - Version exposee d'un compte utilisateur.
+ *
+ * Objectif :
+ * - Ne jamais exposer le hash du mot de passe dans les reponses JSON.
+ * - Fournir uniquement les informations utiles au frontend.
+ */
 public class UtilisateurPublic {
 
     private int idUtilisateur;
@@ -9,9 +16,15 @@ public class UtilisateurPublic {
     private String email;
     private Timestamp dateCreation;
 
+    /**
+     * Constructeur vide requis par Gson.
+     */
     public UtilisateurPublic() {
     }
 
+    /**
+     * Cree une version publique a partir du DTO utilisateur complet.
+     */
     public UtilisateurPublic(Utilisateur utilisateur) {
         this.idUtilisateur = utilisateur.getIdUtilisateur();
         this.pseudo = utilisateur.getPseudo();

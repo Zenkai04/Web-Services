@@ -11,6 +11,20 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Date;
 
+/**
+ * CLASSE UTILITAIRE - JWT
+ *
+ * Responsabilites :
+ * - Generer les tokens JWT renvoyes apres authentification.
+ * - Verifier la signature et l'expiration des tokens recus.
+ * - Extraire les informations utiles du token : id utilisateur et pseudo.
+ * - Lire le header HTTP Authorization au format Bearer.
+ *
+ * Securite :
+ * - La cle HMAC est derivee depuis une chaine secrete suffisamment longue.
+ * - Le token expire apres 15 minutes.
+ * - La deconnexion est geree cote frontend par suppression du token de session.
+ */
 public class JwtManager {
 
     private static final String SECRET =
@@ -25,6 +39,10 @@ public class JwtManager {
         // Classe utilitaire : pas d'instanciation
     }
 
+    /**
+     * Genere un token pour un utilisateur authentifie.
+     * Le subject du token contient l'id utilisateur.
+     */
     public static String generateToken(Utilisateur utilisateur) {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
@@ -39,6 +57,10 @@ public class JwtManager {
                 .compact();
     }
 
+    /**
+     * Parse et verifie un token signe.
+     * Une exception est levee si le token est invalide ou expire.
+     */
     private static Claims parseToken(String token) {
         return Jwts.parser()
                 .verifyWith(KEY)
@@ -47,6 +69,9 @@ public class JwtManager {
                 .getPayload();
     }
 
+    /**
+     * Indique si un token est utilisable pour acceder aux routes protegees.
+     */
     public static boolean isValidToken(String token) {
         try {
             parseToken(token);
@@ -56,16 +81,25 @@ public class JwtManager {
         }
     }
 
+    /**
+     * Extrait l'identifiant utilisateur stocke dans le subject du token.
+     */
     public static int extractUserId(String token) {
         Claims claims = parseToken(token);
         return Integer.parseInt(claims.getSubject());
     }
 
+    /**
+     * Extrait le pseudo stocke comme claim informatif.
+     */
     public static String extractPseudo(String token) {
         Claims claims = parseToken(token);
         return claims.get("pseudo", String.class);
     }
 
+    /**
+     * Lit le token depuis le header Authorization: Bearer <token>.
+     */
     public static String extractTokenFromRequest(HttpServletRequest req) {
         String authHeader = req.getHeader("Authorization");
 

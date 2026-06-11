@@ -10,14 +10,28 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * IMPLEMENTATION JDBC - Persistance des canaux.
+ *
+ * Responsabilites :
+ * - Executer les requetes SQL associees aux canaux.
+ * - Transformer les lignes SQL en DTO Canal.
+ * - Retourner des booleens simples aux controleurs pour indiquer le succes.
+ */
 public class CanalDAOJDBC implements CanalDAO {
 
     private final DbConnectionManager dbManager;
 
+    /**
+     * Recoit le gestionnaire de connexion partage par la DAOFactory.
+     */
     public CanalDAOJDBC(DbConnectionManager dbManager) {
         this.dbManager = dbManager;
     }
 
+    /**
+     * Charge tous les canaux de la base, sans appliquer les regles d'acces REST.
+     */
     @Override
     public List<Canal> findAll() {
         String sql = "SELECT * FROM canal";
@@ -34,6 +48,9 @@ public class CanalDAOJDBC implements CanalDAO {
         return canals;
     }
 
+    /**
+     * Charge les canaux relies a un utilisateur par la table d'association membre_de.
+     */
     @Override
     public List<Canal> findByUtilisateurId(int idUtilisateur) {
         String sql = "SELECT c.* FROM canal c "
@@ -55,6 +72,9 @@ public class CanalDAOJDBC implements CanalDAO {
         return canaux;
     }
 
+    /**
+     * Recherche un canal unique a partir de son identifiant.
+     */
     @Override
     public Canal findById(int idCanal) {
         String sql = "SELECT * FROM canal WHERE \"idCanal\" = ?";
@@ -72,6 +92,9 @@ public class CanalDAOJDBC implements CanalDAO {
         return null;
     }
 
+    /**
+     * Recherche un canal unique a partir de son slug.
+     */
     @Override
     public Canal findBySlug(String slug) {
         String sql = "SELECT * FROM canal WHERE slug = ?";
@@ -89,6 +112,9 @@ public class CanalDAOJDBC implements CanalDAO {
         return null;
     }
 
+    /**
+     * Insere un canal puis recupere la cle primaire generee.
+     */
     @Override
     public boolean save(Canal canal) {
         String sql = "INSERT INTO canal (\"idAdmin\", nom, description, \"typeCanal\", slug, \"dateCreation\") "
@@ -118,6 +144,9 @@ public class CanalDAOJDBC implements CanalDAO {
         }
     }
 
+    /**
+     * Met a jour les champs modifiables du canal.
+     */
     @Override
     public boolean update(Canal canal) {
         String sql = "UPDATE canal SET \"idAdmin\" = ?, nom = ?, description = ?, \"typeCanal\" = ?, slug = ?, "
@@ -139,6 +168,9 @@ public class CanalDAOJDBC implements CanalDAO {
         }
     }
 
+    /**
+     * Convertit une ligne SQL en objet Canal exploitable par l'API.
+     */
     private Canal mapResultSetToCanal(ResultSet rs) throws SQLException {
         Canal canal = new Canal();
         canal.setIdCanal(rs.getInt("idCanal"));

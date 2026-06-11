@@ -19,6 +19,20 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * CONTROLEUR REST - CANAUX
+ *
+ * Responsabilites :
+ * - Exposer les routes REST de gestion des canaux.
+ * - Gerer les messages et les membres dans le contexte d'un canal.
+ * - Appliquer les regles metier : canal public, appartenance, auteur, administrateur.
+ *
+ * Securite :
+ * - Toutes les routes exigent un JWT valide.
+ * - Les canaux publics sont visibles par tous les utilisateurs connectes.
+ * - Les canaux prives ne sont visibles que par leurs membres.
+ * - Seul l'administrateur d'un canal peut le modifier ou ajouter des membres.
+ */
 @WebServlet("/canaux/*")
 public class CanalRestAPI extends SecuredServelet {
 
@@ -28,6 +42,9 @@ public class CanalRestAPI extends SecuredServelet {
     private final UtilisateurDAO utilisateurDAO = DAOFactory.getInstance().getUtilisateurDAO();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Ecrit une reponse JSON avec le code HTTP fourni.
+     */
     private void writeJsonResponse(HttpServletResponse res, int status, Object data)
             throws IOException {
         res.setStatus(status);
@@ -38,6 +55,7 @@ public class CanalRestAPI extends SecuredServelet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Toutes les lectures de canaux necessitent un token valide.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -45,6 +63,7 @@ public class CanalRestAPI extends SecuredServelet {
         int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
+        // GET /canaux
         if (isCollectionPath(pathInfo)) {
             handleGetCanaux(idUtilisateurConnecte, res);
             return;
@@ -52,16 +71,19 @@ public class CanalRestAPI extends SecuredServelet {
 
         String[] parts = pathInfo.split("/");
 
+        // GET /canaux/{id}
         if (parts.length == 2) {
             handleGetCanal(parts[1], idUtilisateurConnecte, res);
             return;
         }
 
+        // GET /canaux/{id}/messages
         if (parts.length == 3 && "messages".equals(parts[2])) {
             handleGetCanalMessages(parts[1], idUtilisateurConnecte, res);
             return;
         }
 
+        // GET /canaux/{id}/membres
         if (parts.length == 3 && "membres".equals(parts[2])) {
             handleGetCanalMembres(parts[1], idUtilisateurConnecte, res);
             return;
@@ -74,6 +96,7 @@ public class CanalRestAPI extends SecuredServelet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Creation de canal, message ou membre : token obligatoire.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -81,6 +104,7 @@ public class CanalRestAPI extends SecuredServelet {
         int idUtilisateurConnecte = getAuthenticatedUserId(req);
         String pathInfo = req.getPathInfo();
 
+        // POST /canaux
         if (isCollectionPath(pathInfo)) {
             handleCreateCanal(idUtilisateurConnecte, req, res);
             return;
@@ -88,11 +112,13 @@ public class CanalRestAPI extends SecuredServelet {
 
         String[] parts = pathInfo.split("/");
 
+        // POST /canaux/{id}/messages
         if (parts.length == 3 && "messages".equals(parts[2])) {
             handleCreateMessageInCanal(parts[1], idUtilisateurConnecte, req, res);
             return;
         }
 
+        // POST /canaux/{id}/membres
         if (parts.length == 3 && "membres".equals(parts[2])) {
             handleAddMembreToCanal(parts[1], idUtilisateurConnecte, req, res);
             return;
@@ -105,6 +131,7 @@ public class CanalRestAPI extends SecuredServelet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // PUT est limite a la modification d'un canal par son administrateur.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -138,6 +165,7 @@ public class CanalRestAPI extends SecuredServelet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Suppressions autorisees uniquement sur les sous-ressources messages/membres.
         if (!checkAuthentication(req, res)) {
             return;
         }
@@ -187,6 +215,7 @@ public class CanalRestAPI extends SecuredServelet {
 
     private void handleGetCanaux(int idUtilisateurConnecte, HttpServletResponse res)
             throws IOException {
+        // Filtrage serveur : l'utilisateur ne voit que les canaux accessibles.
         List<Canal> canaux = canalDAO.findAll().stream()
                 .filter(canal -> canAccessCanal(idUtilisateurConnecte, canal))
                 .collect(Collectors.toList());
@@ -271,6 +300,7 @@ public class CanalRestAPI extends SecuredServelet {
             HttpServletResponse res) throws IOException {
         try {
             Canal canal = objectMapper.readValue(req.getReader(), Canal.class);
+            // L'administrateur du canal est impose par le token, pas par le JSON client.
             canal.setIdAdmin(idUtilisateurConnecte);
             boolean created = canalDAO.save(canal);
 
@@ -281,8 +311,10 @@ public class CanalRestAPI extends SecuredServelet {
             }
 
             if (isPublicCanal(canal)) {
+                // Un canal public contient automatiquement tous les utilisateurs.
                 addAllUtilisateursToCanal(canal.getIdCanal());
             } else {
+                // Pour un canal prive, le createur est au moins membre de son canal.
                 membreCanalDAO.addMembre(idUtilisateurConnecte, canal.getIdCanal());
             }
 
@@ -305,6 +337,7 @@ public class CanalRestAPI extends SecuredServelet {
                 return;
             }
 
+            // Seuls les membres peuvent ecrire dans un canal.
             if (!membreCanalDAO.isMembre(idUtilisateurConnecte, idCanal)) {
                 writeForbidden(res);
                 return;
@@ -312,6 +345,7 @@ public class CanalRestAPI extends SecuredServelet {
 
             Message message = objectMapper.readValue(req.getReader(), Message.class);
             message.setIdCanal(idCanal);
+            // L'auteur est impose par le token pour eviter l'usurpation d'identite.
             message.setIdUtilisateur(idUtilisateurConnecte);
 
             boolean created = messageDAO.save(message);
@@ -344,6 +378,7 @@ public class CanalRestAPI extends SecuredServelet {
                 return;
             }
 
+            // Ajout manuel de membre reserve a l'administrateur du canal.
             if (!isCanalAdmin(idUtilisateurConnecte, canal)) {
                 writeForbidden(res);
                 return;
@@ -381,6 +416,7 @@ public class CanalRestAPI extends SecuredServelet {
                 return;
             }
 
+            // Modification reservee a l'administrateur du canal.
             if (!isCanalAdmin(idUtilisateurConnecte, existingCanal)) {
                 writeForbidden(res);
                 return;
@@ -388,6 +424,7 @@ public class CanalRestAPI extends SecuredServelet {
 
             Canal updatedCanal = objectMapper.readValue(req.getReader(), Canal.class);
             updatedCanal.setIdCanal(idCanal);
+            // L'idAdmin existant est conserve pour eviter un transfert d'administration non controle.
             updatedCanal.setIdAdmin(existingCanal.getIdAdmin());
 
             boolean updated = canalDAO.update(updatedCanal);
@@ -430,6 +467,7 @@ public class CanalRestAPI extends SecuredServelet {
                 return;
             }
 
+            // Suppression autorisee pour l'auteur du message ou l'admin du canal.
             if (!isMessageAuthor(idUtilisateurConnecte, message)
                     && !isCanalAdmin(idUtilisateurConnecte, canal)) {
                 writeForbidden(res);
@@ -466,6 +504,7 @@ public class CanalRestAPI extends SecuredServelet {
                 return;
             }
 
+            // Un admin peut retirer n'importe quel membre ; un utilisateur peut se retirer lui-meme.
             if (!isCanalAdmin(idUtilisateurConnecte, canal)
                     && idUtilisateurConnecte != idUtilisateur) {
                 writeForbidden(res);

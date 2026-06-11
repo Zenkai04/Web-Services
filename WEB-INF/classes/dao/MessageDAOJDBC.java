@@ -9,14 +9,28 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * IMPLEMENTATION JDBC - Persistance des messages.
+ *
+ * Responsabilites :
+ * - Executer les requetes SQL de lecture et d'ecriture des messages.
+ * - Conserver le lien obligatoire entre message, auteur et canal.
+ * - Convertir les resultats SQL en DTO Message.
+ */
 public class MessageDAOJDBC implements MessageDAO {
 
     private final DbConnectionManager dbManager;
 
+    /**
+     * Recoit le gestionnaire de connexion partage par la DAOFactory.
+     */
     public MessageDAOJDBC(DbConnectionManager dbManager) {
         this.dbManager = dbManager;
     }
     
+    /**
+     * Charge tous les messages de la base.
+     */
     @Override
     public List<Message> findAll() {
         List<Message> messages = new ArrayList<>();
@@ -33,6 +47,9 @@ public class MessageDAOJDBC implements MessageDAO {
         return messages;
     }
 
+    /**
+     * Charge un message unique depuis son identifiant.
+     */
     @Override
     public Message findById(int idMessage) {
         Message message = null;
@@ -51,6 +68,9 @@ public class MessageDAOJDBC implements MessageDAO {
         return message;
     }
 
+    /**
+     * Charge les messages appartenant a un canal donne.
+     */
     @Override
     public List<Message> findByCanal(int idCanal) {
         List<Message> messages = new ArrayList<>();
@@ -69,6 +89,9 @@ public class MessageDAOJDBC implements MessageDAO {
         return messages;
     }
 
+    /**
+     * Insere un message puis recupere la cle primaire generee.
+     */
     @Override
     public boolean save(Message message) {
         String sql = "INSERT INTO message (\"idUtilisateur\", \"idCanal\", contenu, \"dateCreation\", \"dateModification\") "
@@ -97,6 +120,9 @@ public class MessageDAOJDBC implements MessageDAO {
         return false;
     }
 
+    /**
+     * Met a jour le contenu et la date de modification d'un message.
+     */
     @Override
     public boolean update(Message message) {
         String sql = "UPDATE message SET contenu = ?, \"dateModification\" = ? WHERE \"idMessage\" = ?";
@@ -113,6 +139,9 @@ public class MessageDAOJDBC implements MessageDAO {
         return false;
     }
 
+    /**
+     * Supprime un message par identifiant.
+     */
     @Override
     public boolean delete(int idMessage) {
         String sql = "DELETE FROM message WHERE \"idMessage\" = ?";
@@ -127,6 +156,9 @@ public class MessageDAOJDBC implements MessageDAO {
         return false;
     }
 
+    /**
+     * Convertit une ligne SQL en objet Message.
+     */
     private Message mapResultSetToMessage(ResultSet rs) throws SQLException {
         Message message = new Message();
         message.setIdMessage(rs.getInt("idMessage"));

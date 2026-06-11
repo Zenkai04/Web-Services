@@ -1,5 +1,17 @@
 // src/services/messageService.ts
+/**
+ * SERVICE MESSAGES - Appels HTTP vers les endpoints de discussion.
+ *
+ * Responsabilites :
+ * - Lire les messages d'un canal.
+ * - Envoyer un message dans un canal accessible.
+ * - Modifier un message via /messages/{id}.
+ * - Supprimer un message via /canaux/{idCanal}/messages/{idMessage}.
+ */
 
+/**
+ * Representation frontend d'un message renvoye par l'API Java.
+ */
 export interface Message {
     idMessage: number;
     idUtilisateur: number;

@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { inscriptionAPI, type Utilisateur } from '../services/authService';
 
+/**
+ * PAGE REGISTER - Formulaire d'inscription publique.
+ *
+ * Responsabilites :
+ * - Collecter pseudo, email et mot de passe.
+ * - Appeler l'endpoint public de creation d'utilisateur.
+ * - Ouvrir la session frontend avec la reponse recue.
+ */
 interface RegisterProps {
     onRegisterSuccess: (user: Utilisateur) => void;
     onNavigateToLogin: () => void;
@@ -13,6 +21,9 @@ export default function Register({ onRegisterSuccess, onNavigateToLogin }: Regis
     const [erreur, setErreur] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
+    /**
+     * Valide le formulaire puis cree le compte via l'API backend.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErreur(null);

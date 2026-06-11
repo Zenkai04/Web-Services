@@ -10,14 +10,28 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * IMPLEMENTATION JDBC - Association membre_de.
+ *
+ * Responsabilites :
+ * - Interroger la table de jointure entre utilisateurs et canaux.
+ * - Fournir les donnees necessaires aux controles d'acces des servlets.
+ * - Manipuler l'ajout et le retrait de membres.
+ */
 public class MembreCanalDAOJDBC implements MembreCanalDAO {
 
     private final DbConnectionManager dbManager;
 
+    /**
+     * Recoit le gestionnaire de connexion partage par la DAOFactory.
+     */
     public MembreCanalDAOJDBC(DbConnectionManager dbManager) {
         this.dbManager = dbManager;
     }
 
+    /**
+     * Charge tous les utilisateurs rattaches a un canal.
+     */
     @Override
     public List<Utilisateur> findByCanal(int idCanal) {
         String sql = "SELECT u.* FROM utilisateur u "
@@ -41,6 +55,9 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         return utilisateurs;
     }
 
+    /**
+     * Charge tous les canaux rattaches a un utilisateur.
+     */
     @Override
     public List<Canal> findByUtilisateur(int idUtilisateur) {
         String sql = "SELECT c.* FROM canal c "
@@ -64,6 +81,9 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         return canaux;
     }
 
+    /**
+     * Verifie l'existence d'une ligne dans la table membre_de.
+     */
     @Override
     public boolean isMembre(int idUtilisateur, int idCanal) {
         String sql = "SELECT 1 FROM membre_de WHERE \"idUtilisateur\" = ? AND \"idCanal\" = ?";
@@ -83,6 +103,9 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         return false;
     }
 
+    /**
+     * Cree une association entre un utilisateur et un canal.
+     */
     @Override
     public boolean addMembre(int idUtilisateur, int idCanal) {
         String sql = "INSERT INTO membre_de (\"idUtilisateur\", \"idCanal\") VALUES (?, ?)";
@@ -99,6 +122,9 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         return false;
     }
 
+    /**
+     * Supprime une association entre un utilisateur et un canal.
+     */
     @Override
     public boolean removeMembre(int idUtilisateur, int idCanal) {
         String sql = "DELETE FROM membre_de WHERE \"idUtilisateur\" = ? AND \"idCanal\" = ?";
@@ -115,6 +141,9 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         return false;
     }
 
+    /**
+     * Convertit une ligne utilisateur en DTO complet.
+     */
     private Utilisateur mapResultSetToUtilisateur(ResultSet rs) throws SQLException {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setIdUtilisateur(rs.getInt("idUtilisateur"));
@@ -125,6 +154,9 @@ public class MembreCanalDAOJDBC implements MembreCanalDAO {
         return utilisateur;
     }
 
+    /**
+     * Convertit une ligne canal en DTO Canal.
+     */
     private Canal mapResultSetToCanal(ResultSet rs) throws SQLException {
         Canal canal = new Canal();
         canal.setIdCanal(rs.getInt("idCanal"));
